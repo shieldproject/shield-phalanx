@@ -1,1 +1,25 @@
---- {}
+---
+jq/jq:
+  object_id: a5a4bccc-0562-451b-b4bf-6a25567db222
+  sha: 5ac55877f41916b80fe546e16d58678cca9aae6d
+  size: 1600813
+tar/libarchive-3.1.2.tar.gz:
+  object_id: 8e80fcf7-b356-4279-bb24-496effaea3c0
+  sha: 6a991777ecb0f890be931cec4aec856d1a195489
+  size: 4527540
+target/consul_0.7.3_linux_amd64.zip:
+  object_id: 7d915fa0-64e6-47d5-bd82-bdc0951181ce
+  sha: 193527eb29014201d9d242b4e2cefb3a4817f7e4
+  size: 8728187
+target/mariadb-10.1.21-linux-x86_64.tar.gz:
+  object_id: 780c51fe-e0be-428b-aa0a-40958d232381
+  sha: 2de62156a8c03372da2b594b8afdddfd4cbc5249
+  size: 169769845
+target/mongodb-linux-x86_64-3.4.2.tgz:
+  object_id: 1ae2c5c4-a1b8-47d4-af1c-a3c645c74416
+  sha: 540ed237905235ac4ca40bbfa0a78324f5d1db4f
+  size: 86473759
+target/postgresql-9.6.1.tar.bz2:
+  object_id: 1e4aa257-e941-4c10-ba25-0b4b46f9142a
+  sha: 4209970c9aaf91ebb2a3b8a2e359419e5192b4ad
+  size: 19260568
