@@ -1,0 +1,75 @@
+#!/bin/bash
+#
+# ci/run
+#
+# CI/CD component for deploying Phalanx with a new candidard
+# SHIELD distribution, and running errands against it.
+#
+# author:  James Hunt <james@niftylogic.com>
+# created: 2017-02-04
+#
+
+header() {
+	echo
+	echo "###############################################"
+	echo
+	echo $*
+	echo
+}
+
+header "Setting up ~/.bosh_config..."
+cat > ~/.bosh_config << EOF
+---
+aliases:
+  target:
+    bosh-lite: ${BOSH_LITE_TARGET}
+auth:
+  ${BOSH_LITE_TARGET}:
+    username: ${BOSH_LITE_USERNAME}
+    password: ${BOSH_LITE_PASSWORD}
+EOF
+
+VERSION=$(cat $VERSION/version)
+
+set -e
+pushd ${SHIELD} &>/dev/null
+header "Creating a new SHIELD distribution, v${VERSION}..."
+
+ROOT=$(pwd)
+GOPATH=${ROOT%%/gopath/*}/gopath
+PATH="${PATH}:${GOPATH}/bin"
+echo "  (Using GOPATH ${GOPATH})"
+godep restore
+go get github.com/mitchellh/gox
+make release
+popd &>/dev/null
+
+cp ${SHIELD}/artifacts/shield-server-linux-amd64.tar.gz \
+   ${PHALANX}/src/shield-rc/shield-server-linux-amd64.tar.gz
+
+pushd ${PHALANX} &>/dev/null
+header "Deploying Phalanx for SHIELD v${VERSION}..."
+
+header "Cleaning up from any previous deployments..."
+bosh target ${BOSH_LITE_TARGET}
+bosh -n delete deployment ${BOSH_LITE_DEPLOYMENT} --force || echo "continuing on..."
+
+header "Creating candidate BOSH release..."
+bosh -n create release
+bosh -n upload release --rebase || echo "Continuing..."
+
+header "Deploying to BOSH-lite..."
+./templates/make_manifest
+bosh -n deploy
+
+header "Running the Phalanx test errand..."
+bosh run errand tests
+
+header "Cleaning up..."
+bosh -n delete deployment ${BOSH_LITE_DEPLOYMENT} --force || echo "continuing on..."
+bosh -n cleanup || echo "continuing on..."
+popd &>/dev/null
+
+echo
+echo "SUCCESS"
+exit 0
