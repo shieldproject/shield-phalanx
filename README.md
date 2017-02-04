@@ -1,76 +1,168 @@
-# BOSH Release for shield-phalanx
+SHIELD Phalanx
+==============
 
-## Usage
+Welcome to **Phalanx**, a bespoke BOSH release for testing the
+full-stack functionality of Stark & Wayne's [SHIELD][1] backup
+solution.
 
-To use this bosh release, first upload it to your bosh:
+
+Methodology
+-----------
+
+The gist of Phalanx is this: spin a bunch of data systems, run a
+handful of SHIELDs with different configurations, and make sure
+that backups and (more importantly) restore operations work!
+
+
+See It Live!
+------------
+
+<http://ci.vsphere.starkandwayne.com/teams/main/pipelines/shield>
+
+
+Current Scope of Tests
+----------------------
+
+Phalanx currently exercises the following parts of the SHIELD
+distribution.
+
+### The `postgres` Plugin
+
+Two databases are created, and filled with some data.
+Two tests are then carried out - a backup/restore of all
+databases, and a backup/restore of just one of the databases.
+
+### The `mysql` Plugin
+
+Two databases are created, and filled with some data.
+Two tests are then carried out - a backup/restore of all
+databases, and a backup/restore of just one of the databases.
+
+### The `consul` Plugin
+
+Two keys are created in the remote Consul Key-Value store, via the
+remote HTTP API (on port 8500).  Then, a backup is performed
+against Consul, and the keys are altered.  After the backup is
+restored, we check to make sure the keys revert to their original
+values.
+
+
+Deploying it Yourself
+---------------------
+
+If you want to do in-depth SHIELD development, you may want to
+deploy your own copy of Phalanx, on a BOSH-lite.  Here's the steps
+to get you started.
+
+First, generate a manifest:
 
 ```
-bosh target BOSH_HOST
-git clone https://github.com/cloudfoundry-community/shield-phalanx-boshrelease.git
-cd shield-phalanx-boshrelease
-bosh upload release releases/shield-phalanx/shield-phalanx-1.yml
+./templates/make_manifest
 ```
 
-For [bosh-lite](https://github.com/cloudfoundry/bosh-lite), you can quickly create a deployment manifest & deploy a cluster. Note that this requires that you have installed [spruce](https://github.com/geofffranks/spruce).
+Then, you're going to need to provide a release tarball of the
+SHIELD you want to test.  From your SHIELD repository, run:
 
 ```
-templates/make_manifest warden
+make release VERSION=0.9.2-rc.3        # change version as needed
+cp artifacts/shield-server-linux-amd64.tar.gz \
+   path/to/phalanx/src/shield-rc/
+```
+
+Then, cut a new (development) BOSH release and deploy your
+manifest:
+
+```
+bosh create release --force
+bosh upload release
 bosh -n deploy
 ```
 
-For AWS EC2, create a single VM:
+Once that's done, just run the `tests` errand:
 
 ```
-templates/make_manifest aws-ec2
-bosh -n deploy
+bosh run errand tests
 ```
 
-### Override security groups
+If things don't turn out well, you may want to run the errand with
+the `--keep-alive` flag, and then `bosh ssh` into the `tests/0`
+instance and poke around.
 
-For AWS & Openstack, the default deployment assumes there is a `default` security group. If you wish to use a different security group(s) then you can pass in additional configuration when running `make_manifest` above.
 
-Create a file `my-networking.yml`:
+Writing new Tests
+-----------------
 
-``` yaml
----
-networks:
-  - name: shield-phalanx1
-    type: dynamic
-    cloud_properties:
-      security_groups:
-        - shield-phalanx
-```
+Tests exist as scripts inside of the
+`/var/vcap/jobs/run-tests/tests` directory on the errand VM.  All
+you have to do to create a new test is add it to the `run-tests`
+job spec, and create the files.
 
-Where `- shield-phalanx` means you wish to use an existing security group called `shield-phalanx`.
-
-You now suffix this file path to the `make_manifest` command:
+Here's a template script to get you started!
 
 ```
-templates/make_manifest openstack-nova my-networking.yml
-bosh -n deploy
+#!/bin/bash
+source /var/vcap/jobs/run-tests/lib/functions system-name
+
+rc=0
+echo "> My New Test"
+echo ">> setting up test data"
+# FIXME: set up the data
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r
+{
+  "name"     : "foo",
+  "summary"  : "Foo",
+  "plugin"   : "foo",
+  "endpoint" : "{}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r
+{
+  "name"      : "foo-daily",
+  "summary"   : "Foo",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target foo | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job foo-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+# FIXME: trash the data by deleting stuff, changing stuff, etc.
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target foo | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+# FIXME: validate the data, post-restore,
+# FIXME: setting rc=<non-zero> on failure.
+
+exit $rc;
 ```
 
-### Development
 
-As a developer of this release, create new releases and upload them:
+Future Work
+-----------
 
-```
-bosh create release --force && bosh -n upload release
-```
+The following tests need to be conceptualized and implemented.
 
-### Final releases
+- A test of the `consul` plugin, against a Consul Key-Value store
+  that requires HTTP Basic Authentication.
+- A test of the `mongo` plugin, against a MongoDB instance that
+  requires authentication.
+- Tests for all of the following plugins:
+  - docker-postgres
+  - elasticsearch
+  - rabbitmq-broker
+  - redis-broker
+  - s3
+  - scality
+  - xtrabackup
 
-To share final releases:
 
-```
-bosh create release --final
-```
-
-By default the version number will be bumped to the next major number. You can specify alternate versions:
-
-
-```
-bosh create release --final --version 2.1
-```
-
-After the first release you need to contact [Dmitriy Kalinin](mailto://dkalinin@pivotal.io) to request your project is added to https://bosh.io/releases (as mentioned in README above).
+[1]: https://github.com/starkandwayne/shield
