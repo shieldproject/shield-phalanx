@@ -1,0 +1,15 @@
+#!/bin/bash
+set -eu
+
+# Detect # of CPUs so make jobs can be parallelized
+CPUS=$(grep -c ^processor /proc/cpuinfo)
+
+# $BOSH_COMPILE_TARGET - where this package & spec'd source files are available
+# $BOSH_INSTALL_TARGET - where you copy/install files to be included in package
+export HOME=/var/vcap
+
+tar -xjf target/postgresql-9.6.1.tar.bz2
+cd postgresql-9.6.1
+./configure --prefix $BOSH_INSTALL_TARGET
+make -j${CPUS}
+make install

@@ -1,0 +1,138 @@
+#!/bin/bash
+source /var/vcap/jobs/run-tests/lib/functions postgres
+
+psql() {
+  command psql -h $TARGET -U vcap "$@"
+}
+
+rc=0
+cat <<EOF
+
+
+########   #######   ######  ########  ######   ########  ########  ######
+##     ## ##     ## ##    ##    ##    ##    ##  ##     ## ##       ##    ##
+##     ## ##     ## ##          ##    ##        ##     ## ##       ##
+########  ##     ##  ######     ##    ##   #### ########  ######    ######
+##        ##     ##       ##    ##    ##    ##  ##   ##   ##             ##
+##        ##     ## ##    ##    ##    ##    ##  ##    ##  ##       ##    ##
+##         #######   ######     ##     ######   ##     ## ########  ######
+
+
+EOF
+# ALL DATABASES {{{
+echo "> Postgres - All Databases"
+echo ">> setting up test data"
+psql postgres <$ROOT/init.sql
+psql db1 -c 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.dat
+psql db2 -c 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.dat
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r .
+{
+  "name"     : "postgres-all",
+  "summary"  : "Postgres All Databases",
+  "plugin"   : "postgres",
+  "endpoint" : "{\"pg_host\":\"localhost\",\"pg_user\":\"vcap\",\"pg_password\":\"\"}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r .
+{
+  "name"      : "postgres-all-daily",
+  "summary"   : "Postgres All Databases",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target postgres-all | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job postgres-all-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+psql db1      -c 'DELETE FROM t_vals WHERE id > 4'
+psql postgres -c 'DROP DATABASE db2'
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target postgres-all | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+psql db1 -c 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.post
+psql db2 -c 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.post
+
+if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
+	echo "db1 was not properly restored!"
+	echo
+	diff -u $TMP/db1.dat $TMP/db1.post || true
+	echo
+	rc=1
+fi
+
+if ! diff -u $TMP/db2.dat $TMP/db2.post &>/dev/null; then
+	echo "db2 was not properly restored!"
+	echo
+	diff -u $TMP/db2.dat $TMP/db2.post || true
+	echo
+	rc=1
+fi
+# }}}
+# SINGLE DATABASE {{{
+echo "> Postgres - Single Databases"
+echo ">> setting up test data"
+psql postgres <$ROOT/init.sql
+psql db1 -c 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.dat
+psql db2 -c 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.dat
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r .
+{
+  "name"     : "postgres-single",
+  "summary"  : "Postgres Single Database",
+  "plugin"   : "postgres",
+  "endpoint" : "{\"pg_host\":\"localhost\",\"pg_user\":\"vcap\",\"pg_password\":\"\",\"pg_database\":\"db1\"}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r .
+{
+  "name"      : "postgres-single-daily",
+  "summary"   : "Postgres Single Database",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target postgres-single | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job postgres-single-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+psql db1 -c 'DELETE FROM t_vals WHERE id > 4'
+psql db2 -c 'TRUNCATE TABLE t_keys'
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target postgres-single | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+psql db1 -c 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.post
+psql db2 -c 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.post
+
+if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
+	echo "db1 was not properly restored!"
+	echo
+	diff -u $TMP/db1.dat $TMP/db1.post || true
+	echo
+	rc=1
+fi
+
+if diff -u $TMP/db2.dat $TMP/db2.post &>/dev/null; then
+	echo "db2 should have been left alone, but was not..."
+	echo "(pre- and post- dumps are IDENTICAL, even though we didn't restore db2)"
+	echo
+	rc=1
+fi
+# }}}
+
+exit $rc;

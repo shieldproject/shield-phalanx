@@ -1,0 +1,23 @@
+check process consul
+  with pidfile /var/vcap/sys/run/targets/consul.pid
+  start program "/var/vcap/jobs/targets/bin/consul start"
+  stop program  "/var/vcap/jobs/targets/bin/consul stop"
+  group vcap
+
+check process mariadb
+  with pidfile /var/vcap/sys/run/targets/mariadb.pid
+  start program "/var/vcap/jobs/targets/bin/mariadb start"
+  stop program  "/var/vcap/jobs/targets/bin/mariadb stop"
+  group vcap
+
+check process mongodb
+  with pidfile /var/vcap/sys/run/targets/mongodb.pid
+  start program "/var/vcap/jobs/targets/bin/mongodb start"
+  stop program  "/var/vcap/jobs/targets/bin/mongodb stop"
+  group vcap
+
+check process postgres
+  with pidfile /var/vcap/sys/run/targets/postgres.pid
+  start program "/var/vcap/jobs/targets/bin/postgres start"
+  stop program  "/var/vcap/jobs/targets/bin/postgres stop"
+  group vcap

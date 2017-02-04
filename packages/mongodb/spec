@@ -1,0 +1,6 @@
+---
+name: mongodb
+dependencies: []
+files:
+  # https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.4.2.tgz
+  - target/mongodb-linux-x86_64-3.4.2.tgz

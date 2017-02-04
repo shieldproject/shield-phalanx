@@ -1,0 +1,7 @@
+db.collection.deleteMany({});
+db.collection.insert({ "foo":  "Iejah2gathia3gaK8bah7Didu6fuk3QuoaThoowae7so7ahth6rathai3fahsh1xaeNe8ieThong4jailei3aix0thahyieheecoo1Ji7oow3Ahboocoh4thu6AedeiP" });
+db.collection.insert({ "bar":  "ijeefoot4ohthah6oogad5aiSooTei0ooj4gaith1neepaishauchieJura4fuda0dien0aiTh6aeshee0ofiy3ja3aem1iox3ceeXaiDeba4vaz7aeGuuLoo7thuxae" });
+db.collection.insert({ "baz":  "ohjiemu2paexoizaPhie2cieShoothee5ienge9yahwaihahkeoSue5uupu8eigiajeirahch6an4aexahD5Ohz1iengaenu8aobazeiGhoocaj5vael1nahph7aF4ju" });
+db.collection.insert({ "foon": "PheeDo6Pehi6eequai8ieziegaihui6Bohc0aiL5ephu2oow5loophooSh2Thoogeen4Eesha1EeShah0iuthahqu4choh7phohghie0ow0chai8Iyemo9Aduelohshe" });
+db.collection.insert({ "quux": "opeLish5aqueik4ohngieKe2ieya7aek0eighohC3meeghaapohteiye9neice5ahSh5Nash7ePhaiph3Choopheiko0dae5kah3laow5aibe3foh0oobejaiyeiHu4b" });
+db.collection.insert({ "boz":  "omahzao4oquieRiigao1eeliph8En9rooquie9Quei7iJeive7shaoj9voqueefoobu5phooch1uiboo5HaetohxieSooV4neicubae8na8oop5Fiequooh6cheiweik" });

@@ -1,0 +1,33 @@
+#!/bin/bash
+set -eu
+source /var/vcap/jobs/targets/helpers/utils targets mariadb
+export LANG=en_US.UTF-8
+export MYSQL_HOME=/var/vcap/jobs/targets/config/mariadb
+DATADIR=/var/vcap/store/targets/mariadb
+
+case $1 in
+  start)
+    pid_guard $PIDFILE $TARGET
+    mkdir -p $DATADIR
+    if [[ ! -d $DATADIR/mysql ]]; then
+      (cd /var/vcap/packages/mariadb && ./scripts/mysql_install_db)
+      chown -R vcap:vcap $DATADIR
+    fi
+    # FIXME: remove once we can configure the mysqldump bin path
+    if [[ ! -e /var/vcap/packages/shield-mysql ]]; then
+      ln -s /var/vcap/packages/mariadb /var/vcap/packages/shield-mysql
+    fi
+    echo $$ > $PIDFILE
+    exec chpst -u vcap:vcap mysqld
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: $TARGET {start|stop}"
+    ;;
+
+esac
+exit 0

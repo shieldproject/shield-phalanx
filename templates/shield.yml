@@ -1,0 +1,102 @@
+---
+name: shield-phalanx-tests
+director_uuid: (( grab $DIRECTOR_UUID ))
+
+releases:
+  - { name: shield-phalanx, version: latest }
+
+compilation:
+  workers: 6
+  network: phalanx
+  reuse_compilation_vms: true
+  cloud_properties: {}
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 1000-60000
+  update_watch_time: 1000-60000
+  serial: false
+
+
+resource_pools:
+  - name: phalanx
+    network: phalanx
+    cloud_properties: {}
+    stemcell:
+      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
+      version: latest
+
+networks:
+  - name: phalanx
+    type: manual
+    subnets:
+    - gateway: 10.244.188.1
+      range:   10.244.188.0/24
+      static: [10.244.188.2 - 10.244.188.60]
+
+instance_groups:
+  - name: targets
+    instances: 1
+    resource_pool: phalanx
+    networks:
+      - name: phalanx
+        static_ips: (( static_ips 0 ))
+    jobs:
+      - name:    targets
+        release: shield-phalanx
+      - name:    agent
+        release: shield-phalanx
+        properties:
+          shields:
+            - (( grab instance_groups.postgres-shield.networks[0].static_ips[0] ))
+            - (( grab instance_groups.mysql-shield.networks[0].static_ips[0] ))
+
+  - name: postgres-shield
+    instances: 1
+    resource_pool: phalanx
+    networks:
+      - name: phalanx
+        static_ips: (( static_ips 1 ))
+    jobs:
+      - name:    shield
+        release: shield-phalanx
+        properties:
+          database: postgres
+      - name:    agent
+        release: shield-phalanx
+        properties:
+          shields: [127.0.0.1]
+
+  - name: mysql-shield
+    instances: 1
+    resource_pool: phalanx
+    networks:
+      - name: phalanx
+        static_ips: (( static_ips 2 ))
+    jobs:
+      - name:    shield
+        release: shield-phalanx
+        properties:
+          database: mysql
+      - name:    agent
+        release: shield-phalanx
+        properties:
+          shields: [127.0.0.1]
+
+  - name: tests
+    lifecycle: errand
+    instances: 1
+    resource_pool: phalanx
+    networks:
+      - name: phalanx
+    jobs:
+      - name:    run-tests
+        release: shield-phalanx
+        properties:
+          target: (( grab instance_groups.targets.networks[0].static_ips[0] ))
+          shields:
+            - name: PostgreSQL SHIELD
+              ip:   (( grab instance_groups.postgres-shield.networks[0].static_ips[0] ))
+            - name: MySQL SHIELD
+              ip:   (( grab instance_groups.mysql-shield.networks[0].static_ips[0] ))

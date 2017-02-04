@@ -1,0 +1,23 @@
+---
+name: targets
+packages:
+  - consul
+  - mariadb
+  - mongodb
+  - postgres
+
+templates:
+  bin/consul:    bin/consul
+  bin/mariadb:   bin/mariadb
+  bin/mongodb:   bin/mongodb
+  bin/postgres:  bin/postgres
+
+  config/postgres/hba.conf: config/postgres/hba.conf
+
+  config/mariadb/my.cnf: config/mariadb/my.cnf
+  config/mariadb/init:   config/mariadb/init
+
+  helpers/utils: helpers/utils
+
+
+properties: {}

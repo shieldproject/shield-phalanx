@@ -1,0 +1,17 @@
+---
+name: agent
+packages:
+  - shield
+  - bsdtar
+
+templates:
+  bin/agent: bin/agent
+
+  config/agent.conf:     config/agent.conf
+
+  helpers/utils: helpers/utils
+
+
+properties:
+  shields:
+    description: List of IP address of all SHIELDs being tested.

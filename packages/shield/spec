@@ -1,0 +1,5 @@
+---
+name: shield
+dependencies: []
+files:
+  - shield-rc/shield-server-linux-amd64.tar.gz

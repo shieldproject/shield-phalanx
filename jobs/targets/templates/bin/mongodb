@@ -1,0 +1,32 @@
+#!/bin/bash
+set -eu
+source /var/vcap/jobs/targets/helpers/utils targets mongodb
+export LANG=en_US.UTF-8
+DATADIR=$STORE_DIR/mongodb
+
+case $1 in
+  start)
+    pid_guard $PIDFILE $TARGET
+    mkdir -p $DATADIR
+    chown -R vcap:vcap $DATADIR
+    # FIXME: remove once we can configure the mysqldump bin path
+    if [[ ! -e /var/vcap/packages/shield-mongo ]]; then
+      ln -s /var/vcap/packages/mongodb /var/vcap/packages/shield-mongo
+    fi
+    echo $$ > $PIDFILE
+    exec chpst -u vcap:vcap mongod \
+      --verbose \
+      --nounixsocket \
+      --dbpath $DATADIR
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: $TARGET {start|stop}"
+    ;;
+
+esac
+exit 0

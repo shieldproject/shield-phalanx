@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eu
+
+# $BOSH_COMPILE_TARGET - where this package & spec'd source files are available
+# $BOSH_INSTALL_TARGET - where you copy/install files to be included in package
+export HOME=/var/vcap
+mkdir -p $BOSH_INSTALL_TARGET/bin
+
+tar -xzf target/mongodb-linux-x86_64-3.4.2.tgz
+cp -a mongodb-linux-x86_64-3.4.2/bin/* $BOSH_INSTALL_TARGET/bin
+chmod 755 $BOSH_INSTALL_TARGET/bin/*

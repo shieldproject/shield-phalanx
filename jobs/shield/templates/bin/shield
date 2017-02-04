@@ -1,0 +1,35 @@
+#!/bin/bash
+set -eu
+source /var/vcap/jobs/shield/helpers/utils shield
+export LANG=en_US.UTF-8
+
+case $1 in
+  start)
+    pid_guard $PIDFILE shield
+    if [[ ! -f $STORE_DIR/key ]]; then
+      chpst -u vcap:vcap ssh-keygen -t rsa -f $STORE_DIR/key -N ''
+    fi
+
+    <% if p('database') == 'postgres' %>
+    chpst -u vcap:vcap /var/vcap/packages/postgres/bin/createdb shield || true
+    shield-schema -t postgres -d postgres://vcap@127.0.0.1:5432/shield?sslmode=disable
+
+    <% elsif p('database') == 'mysql' %>
+    shield-schema -t mysql -d root@/shield
+
+    <% end %>
+    echo $$ > $PIDFILE
+    exec chpst -u vcap:vcap shieldd \
+      --config $JOB_DIR/config/shield.conf
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: shield {start|stop}"
+    ;;
+
+esac
+exit 0

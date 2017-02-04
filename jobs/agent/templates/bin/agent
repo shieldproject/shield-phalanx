@@ -1,0 +1,32 @@
+#!/bin/bash
+set -eu
+source /var/vcap/jobs/agent/helpers/utils agent
+export LANG=en_US.UTF-8
+
+case $1 in
+  start)
+    pid_guard $PIDFILE agent
+
+    mkdir -p $STORE_DIR/fs
+    chown -R vcap:vcap $STORE_DIR/fs
+
+    {<% p('shields').each do |ip| %>
+      curl -sLk <%= ip %>:8080/v1/meta/pubkey
+    <% end %>} > /var/vcap/store/agent/shields
+
+    echo $$ > $PIDFILE
+    exec shield-agent \
+      --log-level debug \
+      --config $JOB_DIR/config/agent.conf
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: agent {start|stop}"
+    ;;
+
+esac
+exit 0

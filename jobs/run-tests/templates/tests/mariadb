@@ -1,0 +1,138 @@
+#!/bin/bash
+source /var/vcap/jobs/run-tests/lib/functions mariadb
+
+mysql() {
+  command mysql -h $TARGET -u vcap -pletmein "$@"
+}
+
+rc=0
+cat <<EOF
+
+
+##     ## ##    ##  ######   #######  ##
+###   ###  ##  ##  ##    ## ##     ## ##
+#### ####   ####   ##       ##     ## ##
+## ### ##    ##     ######  ##     ## ##
+##     ##    ##          ## ##  ## ## ##
+##     ##    ##    ##    ## ##    ##  ##
+##     ##    ##     ######   ##### ## ########
+
+
+EOF
+# ALL DATABASES {{{
+echo "> MySQL/MariaDB - All Databases"
+echo ">> setting up test data"
+mysql <$ROOT/init.sql
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.dat
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.dat
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r .
+{
+  "name"     : "mysql-all",
+  "summary"  : "MySQL All Databases",
+  "plugin"   : "mysql",
+  "endpoint" : "{\"mysql_host\":\"127.0.0.1\",\"mysql_user\":\"root\",\"mysql_password\":\"letmein\"}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r .
+{
+  "name"      : "mysql-all-daily",
+  "summary"   : "MySQL All Databases",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target mysql-all | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job mysql-all-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+mysql db1 -e 'DELETE FROM t_vals WHERE id > 4'
+mysql     -e 'DROP DATABASE db2'
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target mysql-all | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.post
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.post
+
+if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
+	echo "db1 was not properly restored!"
+	echo
+	diff -u $TMP/db1.dat $TMP/db1.post || true
+	echo
+	rc=1
+fi
+
+if ! diff -u $TMP/db2.dat $TMP/db2.post &>/dev/null; then
+	echo "db2 was not properly restored!"
+	echo
+	diff -u $TMP/db2.dat $TMP/db2.post || true
+	echo
+	rc=1
+fi
+# }}}
+# SINGLE DATABASE {{{
+echo "> MySQL/MariaDB - Single Database"
+echo ">> setting up test data"
+mysql <$ROOT/init.sql
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.dat
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.dat
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r .
+{
+  "name"     : "mysql-single",
+  "summary"  : "MySQL Single Database",
+  "plugin"   : "mysql",
+  "endpoint" : "{\"mysql_host\":\"127.0.0.1\",\"mysql_user\":\"root\",\"mysql_password\":\"letmein\",\"mysql_database\":\"db1\"}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r .
+{
+  "name"      : "mysql-single-daily",
+  "summary"   : "MySQL Single Database",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target mysql-single | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job mysql-single-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+mysql db1 -e 'DELETE FROM t_vals WHERE id > 4'
+mysql db2 -e 'TRUNCATE TABLE t_keys'
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target mysql-single | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.post
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.post
+
+if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
+	echo "db1 was not properly restored!"
+	echo
+	diff -u $TMP/db1.dat $TMP/db1.post || true
+	echo
+	rc=1
+fi
+
+if diff -u $TMP/db2.dat $TMP/db2.post &>/dev/null; then
+	echo "db2 should have been left alone, but was not..."
+	echo "(pre- and post- dumps are IDENTICAL, even though we didn't restore db2)"
+	echo
+	rc=1
+fi
+# }}}
+
+exit $rc;

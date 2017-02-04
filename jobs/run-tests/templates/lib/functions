@@ -1,0 +1,25 @@
+#!/bin/bash
+set -eu
+test -z "${ERRAND_DEBUG:-<% if p('debug') %>1<% end %>}" || set -x
+export ROOT=/var/vcap/jobs/run-tests/data/${1:-misc}
+
+shield() {
+  command shield --raw "$@"
+}
+
+wait_for_task() {
+  local task=$1
+  echo "   - task $task"
+  while true; do
+    local status=$(shield task $task 2>/dev/null | jq -r '.status // "not-found"')
+    case $status in
+    (pending|running) sleep 0.1 ;;
+    ("done")          echo "   - completed successfully (status=done)."
+                      break     ;;
+    (*)               echo "   - failure / anomaly detected (status=$status)."
+                      shield task $task | jq -r .
+                      rc=1
+                      break     ;;
+    esac
+  done
+}

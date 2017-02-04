@@ -1,0 +1,8 @@
+#!/bin/bash
+set -eu
+
+tar -xzf target/mariadb-10.1.21-linux-x86_64.tar.gz
+cd mariadb-10.1.21-linux-x86_64
+cp -a bin lib scripts share ${BOSH_INSTALL_TARGET}
+chmod 755 ${BOSH_INSTALL_TARGET}/bin/*
+chmod 755 ${BOSH_INSTALL_TARGET}/scripts/*

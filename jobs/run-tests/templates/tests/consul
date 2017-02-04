@@ -1,0 +1,82 @@
+#!/bin/bash
+source /var/vcap/jobs/run-tests/lib/functions consul
+
+setkey() {
+  curl -sLk -XPUT http://$TARGET:8500/v1/kv/$1 -d "$2" >/dev/null
+}
+getkey() {
+  curl -sLk http://$TARGET:8500/v1/kv/$1 | jq -r '.[].Value' | base64 -d
+}
+
+rc=0
+cat <<EOF
+
+
+ ######   #######  ##    ##  ######  ##     ## ##
+##    ## ##     ## ###   ## ##    ## ##     ## ##
+##       ##     ## ####  ## ##       ##     ## ##
+##       ##     ## ## ## ##  ######  ##     ## ##
+##       ##     ## ##  ####       ## ##     ## ##
+##    ## ##     ## ##   ### ##    ## ##     ## ##
+ ######   #######  ##    ##  ######   #######  ########
+
+
+EOF
+echo "> Consul Key-Value Store"
+echo ">> setting up test data"
+setkey test1 foo
+setkey test2 bar
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r .
+{
+  "name"     : "consul",
+  "summary"  : "Consul",
+  "plugin"   : "consul",
+  "endpoint" : "{}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r .
+{
+  "name"      : "consul-daily",
+  "summary"   : "Consul",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target consul | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job consul-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+setkey test1 "this is incorrect"
+setkey test3 new-key
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target consul | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+if [[ $(getkey test1) != "foo" ]]; then
+	echo "test1 key was not restored properly"
+	echo "  '$(getkey test1)' != 'foo'"
+	echo
+	rc=1
+fi
+
+if [[ $(getkey test2) != "bar" ]]; then
+	echo "test2 key was not restored properly"
+	echo "  '$(getkey test2)' != 'bar'"
+	echo
+	rc=1
+fi
+
+if [[ $(getkey test3) != "new-key" ]]; then
+	echo "test3 key was deleted (or modified) when we restored"
+	echo
+	rc=1
+fi
+
+exit $rc;

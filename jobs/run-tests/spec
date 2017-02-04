@@ -1,0 +1,35 @@
+---
+name: run-tests
+packages:
+  - consul
+  - mariadb
+  - mongodb
+  - postgres
+  - shield
+  - jq
+
+templates:
+  bin/run:                bin/run
+
+  lib/functions:          lib/functions
+
+  tests/consul:           tests/consul
+
+  tests/mongodb:          tests/mongodb
+  data/mongodb/init:      data/mongodb/init
+
+  tests/mariadb:          tests/mariadb
+  data/mariadb/init.sql:  data/mariadb/init.sql
+
+  tests/postgres:         tests/postgres
+  data/postgres/init.sql: data/postgres/init.sql
+
+
+properties:
+  debug:
+    description: Turn on additional debugging output from the errand process.
+    default: false
+  target:
+    description: IP address of the VM where target data systems are running.
+  shields:
+    description: List of SHIELDs to backup/restore functionality against.

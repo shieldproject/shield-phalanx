@@ -1,0 +1,30 @@
+#!/bin/bash
+set -eu
+source /var/vcap/jobs/targets/helpers/utils targets postgres
+export LANG=en_US.UTF-8
+export PGDATA=$STORE_DIR/postgres
+
+case $1 in
+  start)
+    pid_guard $PIDFILE $TARGET
+    test -d $PGDATA || chpst -u vcap:vcap initdb
+    # FIXME: remove once we can configure the pg_dumpall bin path
+    if [[ ! -e /var/vcap/packages/postgres-9.4 ]]; then
+      ln -s /var/vcap/packages/postgres /var/vcap/packages/postgres-9.4
+    fi
+    echo $$ > $PIDFILE
+    exec chpst -u vcap:vcap postgres \
+      -h 0.0.0.0 \
+      -c hba_file=$JOB_DIR/config/postgres/hba.conf
+    ;;
+
+  stop)
+    kill_and_wait $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: $TARGET {start|stop}"
+    ;;
+
+esac
+exit 0

@@ -1,0 +1,69 @@
+#!/bin/bash
+source /var/vcap/jobs/run-tests/lib/functions mongodb
+
+mongo() {
+	command mongo --quiet mongodb://$TARGET "$@"
+}
+
+rc=0
+cat <<EOF
+
+
+##     ##  #######  ##    ##  ######    #######
+###   ### ##     ## ###   ## ##    ##  ##     ##
+#### #### ##     ## ####  ## ##        ##     ##
+## ### ## ##     ## ## ## ## ##   #### ##     ##
+##     ## ##     ## ##  #### ##    ##  ##     ##
+##     ## ##     ## ##   ### ##    ##  ##     ##
+##     ##  #######  ##    ##  ######    #######
+
+
+EOF
+echo "> MongoDB"
+echo ">> setting up test data"
+mongo $ROOT/init
+mongo --eval 'db.collection.find({})' >$TMP/db.dat
+
+echo ">> configuring SHIELD"
+shield create-target <<EOF | jq -r .
+{
+  "name"     : "mongodb-all",
+  "summary"  : "MongoDB All Databases",
+  "plugin"   : "mongo",
+  "endpoint" : "{}",
+  "agent"    : "$TARGET:5444"
+}
+EOF
+shield create-job <<EOF | jq -r .
+{
+  "name"      : "mongodb-all-daily",
+  "summary"   : "MongoDB All Databases",
+  "paused"    : true,
+  "retention" : "$RETENTION_UUID",
+  "schedule"  : "$SCHEDULE_UUID",
+  "store"     : "$STORE_UUID",
+  "target"    : "$(shield target mongodb-all | jq -r '.uuid')"
+}
+EOF
+
+echo ">> running backup job"
+wait_for_task $(shield run $(shield job mongodb-all-daily | jq -r '.uuid') | jq -r '.task_uuid')
+
+echo ">> trashing the data"
+
+mongo --eval 'db.collection.deleteMany({})'
+
+echo ">> restoring from backups"
+wait_for_task $(shield restore $(shield archives -t $(shield target mongodb-all | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+
+mongo --eval 'db.collection.find({})' >$TMP/db.post
+
+if ! diff -u $TMP/db.dat $TMP/db.post &>/dev/null; then
+	echo "db was not properly restored!"
+	echo
+	diff -u $TMP/db.dat $TMP/db.post || true
+	echo
+	rc=1
+fi
+
+exit $rc
