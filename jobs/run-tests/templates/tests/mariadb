@@ -32,7 +32,7 @@ shield create-target <<EOF | jq -r .
   "name"     : "mysql-all",
   "summary"  : "MySQL All Databases",
   "plugin"   : "mysql",
-  "endpoint" : "{\"mysql_host\":\"127.0.0.1\",\"mysql_user\":\"root\",\"mysql_password\":\"letmein\"}",
+  "endpoint" : "{\"mysql_user\":\"vcap\",\"mysql_password\":\"letmein\"}",
   "agent"    : "$TARGET:5444"
 }
 EOF
@@ -90,7 +90,7 @@ shield create-target <<EOF | jq -r .
   "name"     : "mysql-single",
   "summary"  : "MySQL Single Database",
   "plugin"   : "mysql",
-  "endpoint" : "{\"mysql_host\":\"127.0.0.1\",\"mysql_user\":\"root\",\"mysql_password\":\"letmein\",\"mysql_database\":\"db1\"}",
+  "endpoint" : "{\"mysql_user\":\"vcap\",\"mysql_password\":\"letmein\",\"mysql_database\":\"db1\"}",
   "agent"    : "$TARGET:5444"
 }
 EOF

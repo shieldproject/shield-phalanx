@@ -15,7 +15,12 @@ case $1 in
     shield-schema -t postgres -d postgres://vcap@127.0.0.1:5432/shield?sslmode=disable
 
     <% elsif p('database') == 'mysql' %>
-    shield-schema -t mysql -d root@/shield
+    cat <<EOF | /var/vcap/packages/mariadb/bin/mysql -u root
+CREATE USER IF NOT EXISTS vcap@localhost IDENTIFIED BY 'letmein';
+CREATE DATABASE IF NOT EXISTS shield;
+GRANT ALL ON *.* TO vcap@localhost;
+EOF
+    shield-schema -t mysql -d vcap:letmein@/shield
 
     <% end %>
     echo $$ > $PIDFILE

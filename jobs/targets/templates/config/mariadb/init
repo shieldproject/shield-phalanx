@@ -1,5 +1,6 @@
-CREATE USER IF NOT EXISTS 'vcap'@'%' IDENTIFIED BY 'letmein';
-GRANT ALL PRIVILEGES ON *.* TO 'vcap'@'%' WITH GRANT OPTION;
+CREATE USER IF NOT EXISTS 'vcap'@'%'         IDENTIFIED BY 'letmein';
+CREATE USER IF NOT EXISTS 'vcap'@'localhost' IDENTIFIED BY 'letmein';
+GRANT ALL PRIVILEGES ON *.* TO 'vcap'@'%'         WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* TO 'vcap'@'localhost' WITH GRANT OPTION;
 UPDATE mysql.user SET Password=PASSWORD('letmein') WHERE User='vcap';
-
 FLUSH PRIVILEGES;

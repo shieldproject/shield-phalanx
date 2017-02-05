@@ -12,7 +12,6 @@ templates:
   config/shield.conf: config/shield.conf
 
   config/mariadb/my.cnf: config/mariadb/my.cnf
-  config/mariadb/init:   config/mariadb/init
 
   helpers/utils: helpers/utils
 

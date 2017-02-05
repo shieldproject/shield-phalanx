@@ -17,7 +17,7 @@ wait_for_task() {
     ("done")          echo "   - completed successfully (status=done)."
                       break     ;;
     (*)               echo "   - failure / anomaly detected (status=$status)."
-                      shield task $task | jq -r .
+                      command shield task $task
                       rc=1
                       break     ;;
     esac
