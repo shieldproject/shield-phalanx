@@ -36,6 +36,6 @@ TPL=$(dirname $0)
 TMP=$(cd $TPL/..; pwd)/tmp
 mkdir -p $TMP
 export DIRECTOR_UUID STEMCELL
-spruce merge --prune meta $TPL/shield.yml > $TMP/manifest.yml
+spruce merge --prune meta $TPL/shield.yml "$@" > $TMP/manifest.yml
 bosh deployment $TMP/manifest.yml
 bosh status

@@ -59,7 +59,14 @@ bosh -n create release
 bosh -n upload release --rebase || echo "Continuing..."
 
 header "Deploying to BOSH-lite..."
-./templates/make_manifest
+cat >templates/pipeline.yml <<EOF
+meta:
+  aws:
+    access_key: (( grab \$AWS_ACCESS_KEY ))
+    secret_key: (( grab \$AWS_SECRET_KEY ))
+EOF
+./templates/make_manifest templates/pipeline.yml
+rm templates/pipeline.yml
 bosh -n deploy
 
 header "Running the Phalanx test errand..."

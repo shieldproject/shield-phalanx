@@ -1,4 +1,10 @@
 ---
+meta:
+  aws:
+    # will be overridden in CI, so that we don't rely on the Vault...
+    access_key: (( vault "secret/aws/cfcommunity:access" ))
+    secret_key: (( vault "secret/aws/cfcommunity:secret" ))
+
 name: shield-phalanx-tests
 director_uuid: (( grab $DIRECTOR_UUID ))
 
@@ -96,8 +102,8 @@ instance_groups:
         properties:
           target: (( grab instance_groups.targets.networks[0].static_ips[0] ))
           aws:
-            access_key: (( vault "secret/aws/cfcommunity:access" ))
-            secret_key: (( vault "secret/aws/cfcommunity:secret" ))
+            access_key: (( grab meta.aws.access_key ))
+            secret_key: (( grab meta.aws.secret_key ))
           shields:
             - name: PostgreSQL SHIELD
               ip:   (( grab instance_groups.postgres-shield.networks[0].static_ips[0] ))
