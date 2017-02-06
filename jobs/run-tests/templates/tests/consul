@@ -2,10 +2,20 @@
 source /var/vcap/jobs/run-tests/lib/functions consul
 
 setkey() {
+  if [[ -z $(getkey $1) ]]; then
+    echo "   creating new key '$1' with value '$2'"
+  else
+    echo "   changing key '$1' from '$(getkey $1)' -> '$2'"
+  fi
   curl -sLk -XPUT http://$TARGET:8500/v1/kv/$1 -d "$2" >/dev/null
 }
 getkey() {
   curl -sLk http://$TARGET:8500/v1/kv/$1 | jq -r '.[].Value' | base64 -d
+}
+dumpkeys() {
+  for k in "$@"; do
+    echo "    - $k = '$(getkey $k)'"
+  done
 }
 
 rc=0
@@ -26,6 +36,8 @@ echo "> Consul Key-Value Store"
 echo ">> setting up test data"
 setkey test1 foo
 setkey test2 bar
+dumpkeys test1 test2 test3
+echo
 
 echo ">> configuring SHIELD"
 shield create-target <<EOF | jq -r .
@@ -48,33 +60,42 @@ shield create-job <<EOF | jq -r .
   "target"    : "$(shield target consul | jq -r '.uuid')"
 }
 EOF
+echo
 
 echo ">> running backup job"
 wait_for_task $(shield run $(shield job consul-daily | jq -r '.uuid') | jq -r '.task_uuid')
+echo
 
 echo ">> trashing the data"
 setkey test1 "this is incorrect"
 setkey test3 new-key
+dumpkeys test1 test2 test3
+echo
 
 echo ">> restoring from backups"
 wait_for_task $(shield restore $(shield archives -t $(shield target consul | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+echo
+
+echo ">> verifying data, post-restore"
+dumpkeys test1 test2 test3
+echo
 
 if [[ $(getkey test1) != "foo" ]]; then
-	echo "test1 key was not restored properly"
-	echo "  '$(getkey test1)' != 'foo'"
+	echo "!! test1 key was not restored properly"
+	echo "     '$(getkey test1)' != 'foo'"
 	echo
 	rc=1
 fi
 
 if [[ $(getkey test2) != "bar" ]]; then
-	echo "test2 key was not restored properly"
-	echo "  '$(getkey test2)' != 'bar'"
+	echo "!! test2 key was not restored properly"
+	echo "     '$(getkey test2)' != 'bar'"
 	echo
 	rc=1
 fi
 
 if [[ $(getkey test3) != "new-key" ]]; then
-	echo "test3 key was deleted (or modified) when we restored"
+	echo "!! test3 key was deleted (or modified) when we restored"
 	echo
 	rc=1
 fi

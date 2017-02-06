@@ -23,6 +23,9 @@ echo "> MongoDB"
 echo ">> setting up test data"
 mongo $ROOT/init
 mongo --eval 'db.collection.find({})' >$TMP/db.dat
+echo "   initial contents of the database:"
+sed -e 's/^/    /' <$TMP/db.dat
+echo
 
 echo ">> configuring SHIELD"
 shield create-target <<EOF | jq -r .
@@ -45,21 +48,31 @@ shield create-job <<EOF | jq -r .
   "target"    : "$(shield target mongodb-all | jq -r '.uuid')"
 }
 EOF
+echo
 
 echo ">> running backup job"
 wait_for_task $(shield run $(shield job mongodb-all-daily | jq -r '.uuid') | jq -r '.task_uuid')
+echo
 
 echo ">> trashing the data"
-
+echo "   deleting all of the data out of 'db'"
 mongo --eval 'db.collection.deleteMany({})'
+echo "   contents of the database are now:"
+mongo --eval 'db.collection.find({})' | sed -e 's/^/    /'
+echo
 
 echo ">> restoring from backups"
 wait_for_task $(shield restore $(shield archives -t $(shield target mongodb-all | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+echo
+
+echo ">> verifying data, post-restore"
+echo "   contents of 'db':"
+mongo --eval 'db.collection.find({})' | sed -e 's/^/    /'
 
 mongo --eval 'db.collection.find({})' >$TMP/db.post
 
 if ! diff -u $TMP/db.dat $TMP/db.post &>/dev/null; then
-	echo "db was not properly restored!"
+	echo "!! db was not properly restored!"
 	echo
 	diff -u $TMP/db.dat $TMP/db.post || true
 	echo

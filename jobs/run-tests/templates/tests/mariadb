@@ -25,6 +25,12 @@ echo ">> setting up test data"
 mysql <$ROOT/init.sql
 mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.dat
 mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.dat
+echo "   db1.t_vals contains:"
+sed -e 's/^/    /' <$TMP/db1.dat
+echo
+echo "   db2.t_keys contains:"
+sed -e 's/^/    /' <$TMP/db2.dat
+echo
 
 echo ">> configuring SHIELD"
 shield create-target <<EOF | jq -r .
@@ -47,22 +53,41 @@ shield create-job <<EOF | jq -r .
   "target"    : "$(shield target mysql-all | jq -r '.uuid')"
 }
 EOF
+echo
 
 echo ">> running backup job"
 wait_for_task $(shield run $(shield job mysql-all-daily | jq -r '.uuid') | jq -r '.task_uuid')
+echo
 
 echo ">> trashing the data"
-mysql db1 -e 'DELETE FROM t_vals WHERE id > 4'
+echo "   deleting all db1.t_vals records with id's greater than 2"
+mysql db1 -e 'DELETE FROM t_vals WHERE id > 2'
+echo "   db1.t_vals contains:"
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' | sed -e 's/^/    /';
+
+echo "   dropping the db2 databse outright"
 mysql     -e 'DROP DATABASE db2'
+echo "   current databases:"
+mysql db1 -e 'SHOW DATABASES' | sed -e 's/^/    /';
+echo
 
 echo ">> restoring from backups"
 wait_for_task $(shield restore $(shield archives -t $(shield target mysql-all | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+echo
+
+echo ">> verifying data, post-restore"
+echo "   contents of db1.t_vals:"
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' | sed -e 's/^/    /'
+
+echo "   contents of db2.t_keys:"
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' | sed -e 's/^/    /'
+echo
 
 mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.post
 mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.post
 
 if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
-	echo "db1 was not properly restored!"
+	echo "!! db1 was not properly restored!"
 	echo
 	diff -u $TMP/db1.dat $TMP/db1.post || true
 	echo
@@ -70,19 +95,28 @@ if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
 fi
 
 if ! diff -u $TMP/db2.dat $TMP/db2.post &>/dev/null; then
-	echo "db2 was not properly restored!"
+	echo "!! db2 was not properly restored!"
 	echo
 	diff -u $TMP/db2.dat $TMP/db2.post || true
 	echo
 	rc=1
 fi
+echo
 # }}}
+echo
+echo
 # SINGLE DATABASE {{{
 echo "> MySQL/MariaDB - Single Database"
 echo ">> setting up test data"
 mysql <$ROOT/init.sql
 mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.dat
 mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.dat
+echo "   db1.t_vals contains:"
+sed -e 's/^/    /' <$TMP/db1.dat
+echo
+echo "   db2.t_keys contains:"
+sed -e 's/^/    /' <$TMP/db2.dat
+echo
 
 echo ">> configuring SHIELD"
 shield create-target <<EOF | jq -r .
@@ -105,22 +139,41 @@ shield create-job <<EOF | jq -r .
   "target"    : "$(shield target mysql-single | jq -r '.uuid')"
 }
 EOF
+echo
 
 echo ">> running backup job"
 wait_for_task $(shield run $(shield job mysql-single-daily | jq -r '.uuid') | jq -r '.task_uuid')
+echo
 
 echo ">> trashing the data"
-mysql db1 -e 'DELETE FROM t_vals WHERE id > 4'
+echo "   deleting all db1.t_vals records with id's greater than 2"
+mysql db1 -e 'DELETE FROM t_vals WHERE id > 2'
+echo "   db1.t_vals contains:"
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' | sed -e 's/^/    /'
+echo
+echo "   truncating the db2.t_keys table altogether"
 mysql db2 -e 'TRUNCATE TABLE t_keys'
+echo "   db2.t_keys contains:"
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' | sed -e 's/^/    /'
+echo
 
 echo ">> restoring from backups"
 wait_for_task $(shield restore $(shield archives -t $(shield target mysql-single | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+echo
+
+echo ">> verifying data, post-restore"
+echo "   contents of db1.t_vals:"
+mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' | sed -e 's/^/    /'
+
+echo "   contents of db2.t_keys:"
+mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' | sed -e 's/^/    /'
+echo
 
 mysql db1 -e 'SELECT * FROM t_vals ORDER BY ID ASC' >$TMP/db1.post
 mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' >$TMP/db2.post
 
 if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
-	echo "db1 was not properly restored!"
+	echo "!! db1 was not properly restored!"
 	echo
 	diff -u $TMP/db1.dat $TMP/db1.post || true
 	echo
@@ -128,8 +181,8 @@ if ! diff -u $TMP/db1.dat $TMP/db1.post &>/dev/null; then
 fi
 
 if diff -u $TMP/db2.dat $TMP/db2.post &>/dev/null; then
-	echo "db2 should have been left alone, but was not..."
-	echo "(pre- and post- dumps are IDENTICAL, even though we didn't restore db2)"
+	echo "!! db2 should have been left alone, but was not..."
+	echo "   (pre- and post- dumps are IDENTICAL, even though we didn't restore db2)"
 	echo
 	rc=1
 fi
