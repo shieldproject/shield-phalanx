@@ -95,6 +95,9 @@ instance_groups:
         release: shield-phalanx
         properties:
           target: (( grab instance_groups.targets.networks[0].static_ips[0] ))
+          aws:
+            access_key: (( vault "secret/aws/cfcommunity:access" ))
+            secret_key: (( vault "secret/aws/cfcommunity:secret" ))
           shields:
             - name: PostgreSQL SHIELD
               ip:   (( grab instance_groups.postgres-shield.networks[0].static_ips[0] ))

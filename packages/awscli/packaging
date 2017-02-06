@@ -1,0 +1,13 @@
+#!/bin/bash
+set -eu
+
+# $BOSH_COMPILE_TARGET - where this package & spec'd source files are available
+# $BOSH_INSTALL_TARGET - where you copy/install files to be included in package
+export HOME=/var/vcap
+
+# kids, don't do this at home
+sudo apt-get install -y python-dev
+
+unzip awscli/awscli-bundle.zip
+cd awscli-bundle
+./install -i $BOSH_INSTALL_TARGET

@@ -23,3 +23,7 @@ target/postgresql-9.6.1.tar.bz2:
   object_id: 1e4aa257-e941-4c10-ba25-0b4b46f9142a
   sha: 4209970c9aaf91ebb2a3b8a2e359419e5192b4ad
   size: 19260568
+awscli/awscli-bundle.zip:
+  object_id: 403c0076-dd57-4594-94ad-27dd8639f7ca
+  sha: 9dbcc0f022a91baccedbcc4307b3de0dcddf2290
+  size: 8393883

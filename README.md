@@ -26,6 +26,16 @@ Current Scope of Tests
 Phalanx currently exercises the following parts of the SHIELD
 distribution.
 
+### The `s3` Plugin
+
+For each SHIELD, a new AWS bucket is created to be used for
+storing backup archives.  This is the only currently supported
+means of using the `s3` plugin, so if the rest of the tests
+succeed, we can bet that the `s3` plugin works for both storage
+and retrieval.
+
+Note: this does not apply to the `s3`-derived `scality` plugin.
+
 ### The `postgres` Plugin
 
 Two databases are created, and filled with some data.
@@ -160,7 +170,6 @@ The following tests need to be conceptualized and implemented.
   - elasticsearch
   - rabbitmq-broker
   - redis-broker
-  - s3
   - scality
   - xtrabackup
 

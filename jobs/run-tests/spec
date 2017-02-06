@@ -7,6 +7,7 @@ packages:
   - postgres
   - shield
   - jq
+  - awscli
 
 templates:
   bin/run:                bin/run
@@ -33,3 +34,8 @@ properties:
     description: IP address of the VM where target data systems are running.
   shields:
     description: List of SHIELDs to backup/restore functionality against.
+
+  aws.access_key:
+    description: An AWS Access Key ID to use for testing S3 storage of archives.  For each run of Phalanx, a new bucket will be provisioned (with the '-phalanx' suffix), utilized, and then deletted.
+  aws.secret_key:
+    description: The AWS Secret Key ID that goes along with your aws.access_key.
