@@ -17,7 +17,7 @@ that backups and (more importantly) restore operations work!
 See It Live!
 ------------
 
-<http://ci.vsphere.starkandwayne.com/teams/main/pipelines/shield>
+<http://ci.starkandwayne.com/teams/main/pipelines/shield>
 
 
 Current Scope of Tests
