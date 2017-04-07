@@ -128,7 +128,7 @@ shield create-target <<EOF | jq -r .
   "name"     : "consul-ssl",
   "summary"  : "Consul with SSL",
   "plugin"   : "consul",
-  "endpoint" : "{\"host\":\"https://localhost:8500\",\"skip_ssl_validation\":true}",
+  "endpoint" : "{\"host\":\"https://localhost:8501\",\"skip_ssl_validation\":true}",
   "agent"    : "$TARGET:5444"
 }
 EOF
