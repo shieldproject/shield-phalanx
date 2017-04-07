@@ -2,15 +2,18 @@
 name: targets
 packages:
   - consul
+  - certifier
   - mariadb
   - mongodb
   - postgres
 
 templates:
-  bin/consul:    bin/consul
-  bin/mariadb:   bin/mariadb
-  bin/mongodb:   bin/mongodb
-  bin/postgres:  bin/postgres
+  bin/consul:     bin/consul
+  bin/mariadb:    bin/mariadb
+  bin/mongodb:    bin/mongodb
+  bin/postgres:   bin/postgres
+
+  config/consul/consul.conf: config/consul/consul.conf
 
   config/postgres/hba.conf: config/postgres/hba.conf
 
