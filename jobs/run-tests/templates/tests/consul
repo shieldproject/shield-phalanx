@@ -6,7 +6,7 @@ setkey() {
   local key=$2
   local val=$3
 
-  if [[ -z $(getkey $key) ]]; then
+  if [[ -z $(getkey $url $key) ]]; then
     echo "   creating new key '$key' with value '$val'"
   else
     echo "   changing key '$key' from '$(getkey $url $key)' -> '$val'"
@@ -159,9 +159,15 @@ echo
 echo ">> Testing Consul"
 run_tests consul http://$TARGET:8500
 rc=$?
+if [[ $rc != 0 ]];
+	exit $rc
+fi
 
 echo ">> Testing Consul with SSL"
 run_tests consul-ssl https://$TARGET:8501
-rc=$(($rc + $?))
+rc=$?
+if [[ $rc != 0 ]];
+	exit $rc
+fi
 
-exit $rc
+exit 0
