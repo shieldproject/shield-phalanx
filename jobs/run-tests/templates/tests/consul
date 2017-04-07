@@ -159,14 +159,14 @@ echo
 echo ">> Testing Consul"
 run_tests consul http://$TARGET:8500
 rc=$?
-if [[ $rc != 0 ]];
+if [[ $rc != 0 ]]; then
 	exit $rc
 fi
 
 echo ">> Testing Consul with SSL"
 run_tests consul-ssl https://$TARGET:8501
 rc=$?
-if [[ $rc != 0 ]];
+if [[ $rc != 0 ]]; then
 	exit $rc
 fi
 
