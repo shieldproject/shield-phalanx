@@ -39,7 +39,10 @@ ROOT=$(pwd)
 GOPATH=${ROOT%%/gopath/*}/gopath
 PATH="${PATH}:${GOPATH}/bin"
 echo "  (Using GOPATH ${GOPATH})"
-godep restore
+# expecting that everything is in vendor/ now,
+# since openstack broke the ability to `go get`
+# their golang-client (swift plugin)
+#godep restore
 go get github.com/mitchellh/gox
 make release
 popd &>/dev/null
