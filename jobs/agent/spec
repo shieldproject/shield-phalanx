@@ -5,13 +5,12 @@ packages:
   - bsdtar
 
 templates:
-  bin/agent: bin/agent
+  bin/agent:         bin/agent
+  config/agent.conf: config/agent.conf
+  helpers/utils:     helpers/utils
 
-  config/agent.conf:     config/agent.conf
+consumes:
+  - name: shield
+    type: shield
 
-  helpers/utils: helpers/utils
-
-
-properties:
-  shields:
-    description: List of IP address of all SHIELDs being tested.
+properties: {}

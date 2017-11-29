@@ -22,5 +22,8 @@ templates:
 
   helpers/utils: helpers/utils
 
+provides:
+  - name: target
+    type: target
 
 properties: {}

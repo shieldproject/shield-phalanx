@@ -2,20 +2,14 @@
 name: shield
 packages:
   - shield
-  - mariadb
-  - postgres
 
 templates:
-  bin/shield:    bin/shield
-  bin/database:  bin/database
-
+  bin/shield:         bin/shield
   config/shield.conf: config/shield.conf
+  helpers/utils:      helpers/utils
 
-  config/mariadb/my.cnf: config/mariadb/my.cnf
+provides:
+  - name: shield
+    type: shield
 
-  helpers/utils: helpers/utils
-
-
-properties:
-  database:
-    description: Which SHIELD backend database to configure for this SHIELD instance (mysql or postgres)
+properties: {}

@@ -28,30 +28,24 @@ sed -e 's/^/    /' <$TMP/db.dat
 echo
 
 echo ">> configuring SHIELD"
-shield create-target <<EOF | jq -r .
-{
-  "name"     : "mongodb-all",
-  "summary"  : "MongoDB All Databases",
-  "plugin"   : "mongo",
-  "endpoint" : "{}",
-  "agent"    : "$TARGET:5444"
-}
-EOF
-shield create-job <<EOF | jq -r .
-{
-  "name"      : "mongodb-all-daily",
-  "summary"   : "MongoDB All Databases",
-  "paused"    : true,
-  "retention" : "$RETENTION_UUID",
-  "schedule"  : "$SCHEDULE_UUID",
-  "store"     : "$STORE_UUID",
-  "target"    : "$(shield target mongodb-all | jq -r '.uuid')"
-}
-EOF
+buckler create-target               \
+  --name     mongodb-all            \
+  --summary "MongoDB All Databases" \
+  --plugin   mongo                  \
+  --agent   "$TARGET:5444"
+
+buckler create-job                    \
+  --name       mongodb-all-daily      \
+  --summary   "MongoDB All Databases" \
+  --paused                            \
+  --retention  short-term             \
+  --schedule  "daily 3am"             \
+  --store      s3                     \
+  --target     mongodb-all
 echo
 
 echo ">> running backup job"
-wait_for_task $(shield run $(shield job mongodb-all-daily | jq -r '.uuid') | jq -r '.task_uuid')
+wait_for_task $(buckler run mongodb-all-daily | jq -r '.task_uuid')
 echo
 
 echo ">> trashing the data"
@@ -62,7 +56,7 @@ mongo --eval 'db.collection.find({})' | sed -e 's/^/    /'
 echo
 
 echo ">> restoring from backups"
-wait_for_task $(shield restore $(shield archives -t $(shield target mongodb-all | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
+wait_for_task $(buckler restore $(buckler archives -t mongodb-all | jq -r '.[0].uuid') | jq -r '.task_uuid')
 echo
 
 echo ">> verifying data, post-restore"

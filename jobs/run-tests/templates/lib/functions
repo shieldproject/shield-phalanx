@@ -3,21 +3,21 @@ set -eu
 test -z "${ERRAND_DEBUG:-<% if p('debug') %>1<% end %>}" || set -x
 export ROOT=/var/vcap/jobs/run-tests/data/${1:-misc}
 
-shield() {
-  command shield --raw "$@"
+buckler() {
+  command buckler --json "$@"
 }
 
 wait_for_task() {
   local task=$1
   echo "   - task $task"
   while true; do
-    local status=$(shield task $task 2>/dev/null | jq -r '.status // "not-found"')
+    local status=$(buckler task $task 2>/dev/null | jq -r '.status // "not-found"')
     case $status in
     (pending|running) sleep 0.1 ;;
     ("done")          echo "   - completed successfully (status=done)."
                       break     ;;
     (*)               echo "   - failure / anomaly detected (status=$status)."
-                      command shield task $task
+                      command buckler task $task
                       rc=1
                       break     ;;
     esac

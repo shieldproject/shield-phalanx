@@ -10,19 +10,10 @@ case $1 in
       chpst -u vcap:vcap ssh-keygen -t rsa -f $STORE_DIR/key -N ''
     fi
 
-    <% if p('database') == 'postgres' %>
-    chpst -u vcap:vcap /var/vcap/packages/postgres/bin/createdb shield || true
-    shield-schema -t postgres -d postgres://vcap@127.0.0.1:5432/shield?sslmode=disable
+    mkdir -p /var/vcap/store/shield/
+    chown vcap:vcap /var/vcap/store/shield/
+    shield-schema -d /var/vcap/store/shield/main.db
 
-    <% elsif p('database') == 'mysql' %>
-    cat <<EOF | /var/vcap/packages/mariadb/bin/mysql -u root
-CREATE USER IF NOT EXISTS vcap@localhost IDENTIFIED BY 'letmein';
-CREATE DATABASE IF NOT EXISTS shield;
-GRANT ALL ON *.* TO vcap@localhost;
-EOF
-    shield-schema -t mysql -d vcap:letmein@/shield
-
-    <% end %>
     echo $$ > $PIDFILE
     exec chpst -u vcap:vcap shieldd \
       --config $JOB_DIR/config/shield.conf

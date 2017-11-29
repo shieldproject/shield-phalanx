@@ -10,9 +10,8 @@ case $1 in
     mkdir -p $STORE_DIR/fs
     chown -R vcap:vcap $STORE_DIR/fs
 
-    {<% p('shields').each do |ip| %>
-      curl -sLk <%= ip %>:8080/v1/meta/pubkey
-    <% end %>} > /var/vcap/store/agent/shields
+    curl -sLk <%= link('shield').instances[0].address %>:8080/v1/meta/pubkey \
+      > /var/vcap/store/agent/shields
 
     echo $$ > $PIDFILE
     exec shield-agent \

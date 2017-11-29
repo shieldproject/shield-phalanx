@@ -25,15 +25,16 @@ templates:
   tests/postgres:         tests/postgres
   data/postgres/init.sql: data/postgres/init.sql
 
+consumes:
+  - name: shield
+    type: shield
+  - name: target
+    type: target
 
 properties:
   debug:
     description: Turn on additional debugging output from the errand process.
     default: false
-  target:
-    description: IP address of the VM where target data systems are running.
-  shields:
-    description: List of SHIELDs to backup/restore functionality against.
 
   aws.access_key:
     description: An AWS Access Key ID to use for testing S3 storage of archives.  For each run of Phalanx, a new bucket will be provisioned (with the '-phalanx' suffix), utilized, and then deletted.

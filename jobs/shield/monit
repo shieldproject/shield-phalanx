@@ -1,9 +1,3 @@
-check process database
-  with pidfile /var/vcap/sys/run/shield/database.pid
-  start program "/var/vcap/jobs/shield/bin/database start"
-  stop program  "/var/vcap/jobs/shield/bin/database stop"
-  group vcap
-
 check process shield
   with pidfile /var/vcap/sys/run/shield/shield.pid
   start program "/var/vcap/jobs/shield/bin/shield start"

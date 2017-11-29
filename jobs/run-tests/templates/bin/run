@@ -10,11 +10,10 @@ for pkg in consul mariadb mongodb postgres shield jq awscli; do
   export PATH=$PATH:/var/vcap/packages/$pkg/bin
 done
 
-<% p('shields').each_with_index do |shield,i| %>
 echo "################################################################"
 echo "#"
-echo "# SHIELD '<%= shield['name'] %>'"
-echo "#     at <%= shield['ip'] %>"
+echo "# SHIELD '<%= link('shield').instances[0].name %>'"
+echo "#     at <%= link('shield').instances[0].address %>"
 echo "#"
 echo "################################################################"
 echo
@@ -40,51 +39,35 @@ echo
 # }}}
 # configure SHIELD # {{{
 echo "CONFIGURING SHIELD AT <%= shield['ip'] %>"
-echo "> Targeting backend s<%= i %> at <%= shield['ip'] %>"
-shield create-backend s<%= i %> http://<%= shield['ip'] %>:8080
-shield backend s<%= i %>
-echo "> Clearing out any previous Jobs / Stores / Targets / Schedules / Retention"
+echo "> Targeting backend at <%= shield['ip'] %>"
+buckler api test http://<%= link('shield').instances[0].address %>:8080
+export SHIELD_CORE=test
+export SHIELD_TENANT=tenant1
+buckler login -u smoke -p tests
+echo "> Clearing out any previous Jobs / Stores / Targets / Retention"
 (
- for uuid in $(shield jobs      --raw | jq -r '.[].uuid'); do shield delete-job      --raw $uuid ; done
- for uuid in $(shield stores    --raw | jq -r '.[].uuid'); do shield delete-store    --raw $uuid ; done
- for uuid in $(shield targets   --raw | jq -r '.[].uuid'); do shield delete-target   --raw $uuid ; done
- for uuid in $(shield schedules --raw | jq -r '.[].uuid'); do shield delete-schedule --raw $uuid ; done
- for uuid in $(shield policies  --raw | jq -r '.[].uuid'); do shield delete-policy   --raw $uuid ; done
+ for uuid in $(buckler jobs      --json | jq -r '.[].uuid'); do buckler delete-job      $uuid ; done
+ for uuid in $(buckler stores    --json | jq -r '.[].uuid'); do buckler delete-store    $uuid ; done
+ for uuid in $(buckler targets   --json | jq -r '.[].uuid'); do buckler delete-target   $uuid ; done
+ for uuid in $(buckler policies  --json | jq -r '.[].uuid'); do buckler delete-policy   $uuid ; done
 )&>/dev/null
-echo "> Creating daily-schedule Schedule"
-shield create-schedule --raw <<EOF
-{
-  "name"    : "daily-schedule",
-  "summary" : "Default Schedule",
-  "when"    : "daily 4am"
-}
-EOF
 echo "> Creating short-term Retention Policy"
-shield create-policy --raw <<EOF
-{
-  "name"    : "short-term",
-  "summary" : "Short-term Retention",
-  "expires" : 3600
-}
-EOF
+buckler create-policy \
+  --name     short-term \
+  --summary "Short-Term Retention" \
+  --days     1
+
 echo "> Configuring s3-store Storage"
-shield create-store --raw <<EOF
-{
-  "name"     : "s3-store",
-  "summary"  : "Default S3 Storage",
-  "plugin"   : "s3",
-  "endpoint" : "{\"access_key_id\":\"$AWS_ACCESS_KEY\",\"secret_access_key\":\"$AWS_SECRET_KEY\",\"bucket\":\"$BUCKET\",\"prefix\":\"phalanx\"}",
-  "agent"    : "127.0.0.1:5444"
-}
-EOF
-echo "> Finding UUIDs"
-export SCHEDULE_UUID=$( shield schedule daily-schedule --raw | jq -r '.uuid')
-export RETENTION_UUID=$(shield policy   short-term     --raw | jq -r '.uuid')
-export STORE_UUID=$(    shield store    s3-store       --raw | jq -r '.uuid')
-echo "  - SCHEDULE  = $SCHEDULE_UUID"
-echo "  - RETENTION = $RETENTION_UUID"
-echo "  - STORE     = $STORE_UUID"
-echo
+buckler create-store \
+  --name     s3-store \
+  --summary "Default S3 Storage" \
+  --plugin   s3 \
+  --agent    127.0.0.1:5444
+  --data    "access_key_id=$AWS_ACCESS_KEY" \
+  --data    "secret_access_key=$AWS_SECRET_KEY" \
+  --data    "bucket=$BUCKET" \
+  --data    "prefix=phalanx"
+
 # }}}
 # run TESTS {{{
 echo "RUNNING TARGET TESTS"
