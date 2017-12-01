@@ -53,7 +53,9 @@ export BOSH_ENVIRONMENT=${BOSH_LITE_TARGET}
 export BOSH_CLIENT=${BOSH_LITE_USERNAME}
 export BOSH_CLIENT_SECRET=${BOSH_LITE_PASSWORD}
 export BOSH_DEPLOYMENT=${BOSH_LITE_DEPLOYMENT}
-export BOSH_CA_CERT='-----BEGIN CERTIFICATE-----
+export BOSH_CA_CERT=ca.pem
+cat >ca.pem <<EOF
+-----BEGIN CERTIFICATE-----
 MIIEPzCCAqegAwIBAgIQXMS6CpyVnmKuPEQv4HqzQjANBgkqhkiG9w0BAQsFADAz
 MQwwCgYDVQQGEwNVU0ExFjAUBgNVBAoTDUNsb3VkIEZvdW5kcnkxCzAJBgNVBAMT
 AmNhMB4XDTE3MTAyNzA2NTc0MFoXDTE4MTAyNzA2NTc0MFowPDEMMAoGA1UEBhMD
@@ -77,7 +79,8 @@ y9MBpwc+49fAo14WhNJYuaHefbHemPGlFevzOhlceXkTG3XEW1DhwgwnP5oDunOZ
 9eXuaDEwd+3A0dOpVgwWW2sUsz9uPZ/KfR7YpBPxSSLXDnhmxpmyysYpRriTuu0a
 XteQKWxtaR1zXCeZlF+o7DOgBb8C0md0l9BkuUoA/2kuZDxwq/4wjoWQZT39vfym
 IkBJSHt+ifNpW144IS1U0nW0apLfuGSv6/cL8q1pLOHiElw=
------END CERTIFICATE-----'
+-----END CERTIFICATE-----
+EOF
 
 header "Cleaning up from any previous deployments..."
 bosh2 delete-deployment -n || echo "continuing on..."
