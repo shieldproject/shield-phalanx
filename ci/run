@@ -84,7 +84,7 @@ bosh2 -n deploy .ci.yml
 rm -f .ci.yml
 
 header "Running the Phalanx test errand..."
-bosh2 run-errand tests
+bosh2 run-errand phalanx-tests
 
 header "Cleaning up..."
 bosh2 delete-deployment -n || echo "continuing on..."
