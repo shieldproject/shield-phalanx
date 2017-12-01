@@ -70,7 +70,7 @@ header "Cleaning up from any previous deployments..."
 bosh2 delete-deployment -n || echo "continuing on..."
 
 header "Creating candidate BOSH release..."
-bosh2 create-release --force
+bosh2 create-release --force --timestamp-version
 bosh2 upload-release || echo "continuing on..."
 
 header "Deploying to BOSH-lite..."
