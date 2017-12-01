@@ -39,10 +39,6 @@ ROOT=$(pwd)
 GOPATH=${ROOT%%/gopath/*}/gopath
 PATH="${PATH}:${GOPATH}/bin"
 echo "  (Using GOPATH ${GOPATH})"
-# expecting that everything is in vendor/ now,
-# since openstack broke the ability to `go get`
-# their golang-client (swift plugin)
-#godep restore
 go get github.com/mitchellh/gox
 make release
 popd &>/dev/null
@@ -53,31 +49,34 @@ cp ${SHIELD}/artifacts/shield-server-linux-amd64.tar.gz \
 pushd ${PHALANX} &>/dev/null
 header "Deploying Phalanx for SHIELD v${VERSION}..."
 
+export BOSH_ENVIRONMENT=${BOSH_LITE_TARGET}
+export BOSH_CLIENT=${BOSH_LITE_USERNAME}
+export BOSH_CLIENT_SECRET=${BOSH_LITE_PASSWORD}
+export BOSH_DEPLOYMENT=${BOSH_LITE_DEPLOYMENT}
+
 header "Cleaning up from any previous deployments..."
-bosh target ${BOSH_LITE_TARGET}
-bosh -n delete deployment ${BOSH_LITE_DEPLOYMENT} --force || echo "continuing on..."
+bosh delete-deployment -n --force || echo "continuing on..."
 
 header "Creating candidate BOSH release..."
-bosh -n create release
-bosh -n upload release --rebase || echo "Continuing..."
+bosh2 create-release --force
+bosh2 upload-release || echo "continuing on..."
 
 header "Deploying to BOSH-lite..."
-cat >templates/pipeline.yml <<EOF
+cat <<EOF | spruce merge ci/manifest.yml - > .ci.yml
 meta:
   aws:
     access_key: (( grab \$AWS_ACCESS_KEY ))
     secret_key: (( grab \$AWS_SECRET_KEY ))
 EOF
-./templates/make_manifest templates/pipeline.yml
-rm templates/pipeline.yml
-bosh -n deploy
+bosh2 -n deploy .ci.yml
+rm -f .ci.yml
 
 header "Running the Phalanx test errand..."
-bosh run errand tests
+bosh2 run-errand tests
 
 header "Cleaning up..."
-bosh -n delete deployment ${BOSH_LITE_DEPLOYMENT} --force || echo "continuing on..."
-bosh -n cleanup || echo "continuing on..."
+bosh delete-deployment -n || echo "continuing on..."
+bosh clean-up -n || echo "continuing on..."
 popd &>/dev/null
 
 echo

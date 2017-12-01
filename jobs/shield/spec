@@ -2,11 +2,16 @@
 name: shield
 packages:
   - shield
+  - vault
 
 templates:
-  bin/shield:         bin/shield
-  config/shield.conf: config/shield.conf
-  helpers/utils:      helpers/utils
+  # vault secure storage
+  bin/vault:            bin/vault
+  config/vault.conf:    config/vault.conf
+
+  # shieldd core
+  bin/shieldd:          bin/shieldd
+  config/shieldd.conf:  config/shieldd.conf
 
 provides:
   - name: shield

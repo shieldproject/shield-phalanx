@@ -1,5 +1,5 @@
 #!/bin/bash
-source /var/vcap/jobs/run-tests/lib/functions mongodb
+source /var/vcap/jobs/tests/lib/functions mongodb
 
 mongo() {
 	command mongo --quiet mongodb://$TARGET "$@"
@@ -19,7 +19,29 @@ cat <<EOF
 
 
 EOF
-echo "> MongoDB"
+echo ">> configuring SHIELD"
+cat <<EOF | shield import -
+core:  http://<%= link('shield').instances[0].address %>:8080
+token: $SHIELD_AUTH_TOKEN
+
+tenants:
+  - name: tenant1
+    policies:
+      - name: short-term
+        days: 2
+
+    systems:
+      - name:   mongodb-all
+        plugin: mongo
+        agent:  $TARGET:5444
+        jobs:
+          - name:    mongodb-all-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+EOF
+echo
+
 echo ">> setting up test data"
 mongo $ROOT/init
 mongo --eval 'db.collection.find({})' >$TMP/db.dat
@@ -27,25 +49,8 @@ echo "   initial contents of the database:"
 sed -e 's/^/    /' <$TMP/db.dat
 echo
 
-echo ">> configuring SHIELD"
-buckler create-target               \
-  --name     mongodb-all            \
-  --summary "MongoDB All Databases" \
-  --plugin   mongo                  \
-  --agent   "$TARGET:5444"
-
-buckler create-job                    \
-  --name       mongodb-all-daily      \
-  --summary   "MongoDB All Databases" \
-  --paused                            \
-  --retention  short-term             \
-  --schedule  "daily 3am"             \
-  --store      s3                     \
-  --target     mongodb-all
-echo
-
 echo ">> running backup job"
-wait_for_task $(buckler run mongodb-all-daily | jq -r '.task_uuid')
+wait_for_task $(shield run-job mongodb-all-daily | jq -r '.task_uuid')
 echo
 
 echo ">> trashing the data"
@@ -56,7 +61,7 @@ mongo --eval 'db.collection.find({})' | sed -e 's/^/    /'
 echo
 
 echo ">> restoring from backups"
-wait_for_task $(buckler restore $(buckler archives -t mongodb-all | jq -r '.[0].uuid') | jq -r '.task_uuid')
+wait_for_task $(restore_latest mongodb-all)
 echo
 
 echo ">> verifying data, post-restore"

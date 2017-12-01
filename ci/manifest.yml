@@ -1,0 +1,52 @@
+---
+meta:
+  aws:
+    # will be overridden in CI, so that we don't rely on the Vault...
+    access_key: (( vault "secret/aws/cfcommunity:access" ))
+    secret_key: (( vault "secret/aws/cfcommunity:secret" ))
+
+name: shield-phalanx-tests-jrh
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+releases:
+  - { name: shield-phalanx, version: latest }
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 1000-300000
+  update_watch_time: 1000-300000
+  serial: false
+
+instance_groups:
+  - name: shield
+    instances: 1
+    azs:       [z1]
+    vm_type:   default
+    stemcell:  default
+    networks:
+      - name: default
+    jobs:
+      - { release: shield-phalanx, name: shield  }
+      - { release: shield-phalanx, name: agent   }
+      - { release: shield-phalanx, name: targets }
+
+  - name: tests
+    lifecycle: errand
+    instances: 1
+    azs:       [z1]
+    vm_type:   default
+    stemcell:  default
+    networks:
+      - name: default
+    jobs:
+      - name:    tests
+        release: shield-phalanx
+        properties:
+          aws:
+            access_key: (( grab meta.aws.access_key ))
+            secret_key: (( grab meta.aws.secret_key ))

@@ -3,17 +3,15 @@ set -eu
 exec 2>&1
 test -z "${ERRAND_DEBUG:-<% if p('debug') %>1<% end %>}" || set -x
 
+export TARGET="<%= link('shield').instances[0].address %>"
 export TMP=/var/vcap/sys/tmp ; mkdir -p $TMP
-export SHIELD_API_TOKEN='WE-ARE-LEGION'
-export TARGET=<%= p('target') %>
 for pkg in consul mariadb mongodb postgres shield jq awscli; do
   export PATH=$PATH:/var/vcap/packages/$pkg/bin
 done
 
 echo "################################################################"
 echo "#"
-echo "# SHIELD '<%= link('shield').instances[0].name %>'"
-echo "#     at <%= link('shield').instances[0].address %>"
+echo "# SHIELD at <%= link('shield').instances[0].address %>"
 echo "#"
 echo "################################################################"
 echo
@@ -38,42 +36,47 @@ aws s3 mb s3://$BUCKET
 echo
 # }}}
 # configure SHIELD # {{{
-echo "CONFIGURING SHIELD AT <%= shield['ip'] %>"
-echo "> Targeting backend at <%= shield['ip'] %>"
-buckler api test http://<%= link('shield').instances[0].address %>:8080
+echo "CONFIGURING SHIELD AT <%= link('shield').instances[0].address %>"
+echo "> Targeting backend at <%= link('shield').instances[0].address %>"
+
+shield api test http://<%= link('shield').instances[0].address %>:8080
 export SHIELD_CORE=test
 export SHIELD_TENANT=tenant1
-buckler login -u smoke -p tests
-echo "> Clearing out any previous Jobs / Stores / Targets / Retention"
-(
- for uuid in $(buckler jobs      --json | jq -r '.[].uuid'); do buckler delete-job      $uuid ; done
- for uuid in $(buckler stores    --json | jq -r '.[].uuid'); do buckler delete-store    $uuid ; done
- for uuid in $(buckler targets   --json | jq -r '.[].uuid'); do buckler delete-target   $uuid ; done
- for uuid in $(buckler policies  --json | jq -r '.[].uuid'); do buckler delete-policy   $uuid ; done
-)&>/dev/null
-echo "> Creating short-term Retention Policy"
-buckler create-policy \
-  --name     short-term \
-  --summary "Short-Term Retention" \
-  --days     1
 
-echo "> Configuring s3-store Storage"
-buckler create-store \
-  --name     s3-store \
-  --summary "Default S3 Storage" \
-  --plugin   s3 \
-  --agent    127.0.0.1:5444
-  --data    "access_key_id=$AWS_ACCESS_KEY" \
-  --data    "secret_access_key=$AWS_SECRET_KEY" \
-  --data    "bucket=$BUCKET" \
-  --data    "prefix=phalanx"
+(export SHIELD_CORE_MASTER=sekrit
+ shield init || shield unlock)
 
+shield login -u smoke -p tests
+SHIELD_AUTH_TOKEN=$(shield create-auth-token t$(date +"%Y%m%d%H%M%S"))
+export SHIELD_AUTH_TOKEN
+
+cat <<EOF | shield import -
+core: http://<%= link('shield').instances[0].address %>:8080
+token: $SHIELD_AUTH_TOKEN
+
+tenants:
+  - name: tenant1
+
+    policies:
+      - name: short-term
+        days: 2
+
+    storage:
+      - name: s3
+        plugin: s3
+        agent: 127.0.0.1:5444
+        config:
+          access_key_id:     $AWS_ACCESS_KEY
+          secret_access_key: $AWS_SECRET_KEY
+          bucket:            $BUCKET
+          prefix:            ph/al/an/x
+EOF
 # }}}
 # run TESTS {{{
 echo "RUNNING TARGET TESTS"
 failed=0
 rm -f $TMP/FAILURE $TMP/SUCCESS
-for run in /var/vcap/jobs/run-tests/tests/*; do
+for run in /var/vcap/jobs/tests/tests/*; do
 	job=${run##*/}
 	chmod 0755 $run
 	if ! $run $*; then
@@ -98,7 +101,6 @@ aws s3 rb s3://$BUCKET
 # }}}
 
 
-<% end %>
 echo
 echo
 echo "DONE"

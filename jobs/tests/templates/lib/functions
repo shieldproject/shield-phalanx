@@ -1,25 +1,30 @@
 #!/bin/bash
 set -eu
 test -z "${ERRAND_DEBUG:-<% if p('debug') %>1<% end %>}" || set -x
-export ROOT=/var/vcap/jobs/run-tests/data/${1:-misc}
+export ROOT=/var/vcap/jobs/tests/data/${1:-misc}
 
-buckler() {
-  command buckler --json "$@"
+shield() {
+  command shield --json "$@"
 }
 
 wait_for_task() {
   local task=$1
   echo "   - task $task"
   while true; do
-    local status=$(buckler task $task 2>/dev/null | jq -r '.status // "not-found"')
+    local status=$(shield task $task 2>/dev/null | jq -r '.status // "not-found"')
     case $status in
     (pending|running) sleep 0.1 ;;
     ("done")          echo "   - completed successfully (status=done)."
                       break     ;;
     (*)               echo "   - failure / anomaly detected (status=$status)."
-                      command buckler task $task
+                      command shield task $task
                       rc=1
                       break     ;;
     esac
   done
+}
+
+restore_latest() {
+  local target=$1
+  shield restore-archive "$(shield archives --target $target | jq -r '.[0].uuid')" | jq -r '.task_uuid'
 }

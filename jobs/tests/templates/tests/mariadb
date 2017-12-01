@@ -1,5 +1,5 @@
 #!/bin/bash
-source /var/vcap/jobs/run-tests/lib/functions mariadb
+source /var/vcap/jobs/tests/lib/functions mariadb
 
 mysql() {
   command mysql -h $TARGET -u vcap -pletmein "$@"
@@ -19,6 +19,47 @@ cat <<EOF
 
 
 EOF
+echo ">> configuring SHIELD"
+cat <<EOF | shield import -
+core:  http://<%= link('shield').instances[0].address %>:8080
+token: $SHIELD_AUTH_TOKEN
+
+tenants:
+  - name: tenant1
+    policies:
+      - name: short-term
+        days: 2
+
+    systems:
+      - name:   mysql-all
+        plugin: mysql
+        agent:  $TARGET:5444
+        config:
+          mysql_user:     vcap
+          mysql_password: letmein
+        jobs:
+          - name:    mysql-all-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+            paused:  yes
+
+      - name:   mysql-single
+        plugin: mysql
+        agent:  $TARGET:5444
+        config:
+          mysql_user:     vcap
+          mysql_password: letmein
+          mysql_database: db1
+        jobs:
+          - name:    mysql-single-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+            paused:  yes
+EOF
+
+
 # ALL DATABASES {{{
 echo "> MySQL/MariaDB - All Databases"
 echo ">> setting up test data"
@@ -32,27 +73,8 @@ echo "   db2.t_keys contains:"
 sed -e 's/^/    /' <$TMP/db2.dat
 echo
 
-echo ">> configuring SHIELD"
-buckler create-target               \
-  --name      mysql-all             \
-  --summary  "MySQL All Databases"  \
-  --plugin   mysql                  \
-  --data     mysql_user=vcap        \
-  --data     mysql_password=letmein \
-  --agent    "$TARGET:5444"
-
-buckler create-job                  \
-  --name       mysql-all-daily      \
-  --summary   "MySQL All Databases" \
-  --paused                          \
-  --retention short-term            \
-  --schedule  "daily 4:15am"        \
-  --store     s3                    \
-  --target    mysql-all
-echo
-
 echo ">> running backup job"
-wait_for_task $(buckler run mysql-all-daily | jq -r '.task_uuid')
+wait_for_task $(shield run-job mysql-all-daily | jq -r '.task_uuid')
 echo
 
 echo ">> trashing the data"
@@ -68,7 +90,7 @@ mysql db1 -e 'SHOW DATABASES' | sed -e 's/^/    /';
 echo
 
 echo ">> restoring from backups"
-wait_for_task $(buckler restore $(buckler archives -t mysql-all | jq -r '.[0].uuid') | jq -r '.task_uuid')
+wait_for_task $(restore_latest mysql-all)
 echo
 
 echo ">> verifying data, post-restore"
@@ -114,28 +136,8 @@ echo "   db2.t_keys contains:"
 sed -e 's/^/    /' <$TMP/db2.dat
 echo
 
-echo ">> configuring SHIELD"
-buckler create-target                \
-  --name      mysql-single           \
-  --summary  "MySQL Single Database" \
-  --plugin    mysql                  \
-  --data      mysql_user=vcap        \
-  --data      mysql_password=letmein \
-  --data      mysql_database=db1     \
-  --agent    "$TARGET:5444"
-
-buckler create-job                    \
-  --name       mysql-single-daily     \
-  --summary   "MySQL Single Database" \
-  --paused                            \
-  --retention  short-term             \
-  --schedule  "daily 4:25am"          \
-  --store     s3                      \
-  --target    mysql-single
-echo
-
 echo ">> running backup job"
-wait_for_task $(buckler run mysql-single-daily | jq -r '.task_uuid')
+wait_for_task $(shield run-job mysql-single-daily | jq -r '.task_uuid')
 echo
 
 echo ">> trashing the data"
@@ -151,7 +153,7 @@ mysql db2 -e 'SELECT * FROM t_keys ORDER BY ID ASC' | sed -e 's/^/    /'
 echo
 
 echo ">> restoring from backups"
-wait_for_task $(buckler restore $(buckler archives -t mysql-single) | jq -r '.[0].uuid') | jq -r '.task_uuid')
+wait_for_task $(restore_latest mysql-single)
 echo
 
 echo ">> verifying data, post-restore"

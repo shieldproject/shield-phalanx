@@ -1,5 +1,5 @@
 #!/bin/bash
-source /var/vcap/jobs/run-tests/lib/functions consul
+source /var/vcap/jobs/tests/lib/functions consul
 
 setkey() {
   local url=$1
@@ -60,7 +60,7 @@ run_tests() {
 	fi
 
 	echo ">> running backup job"
-	wait_for_task $(buckler run ${target}-daily | jq -r '.task_uuid')
+	wait_for_task $(shield run-job ${target}-daily | jq -r '.task_uuid')
 	echo
 
 	echo ">> trashing the data"
@@ -70,7 +70,7 @@ run_tests() {
 	echo
 
 	echo ">> restoring from backups"
-	wait_for_task $(buckler restore $(buckler archives -t consul | jq -r '.[0].uuid') | jq -r '.task_uuid')
+	wait_for_task $(restore_latest ${target})
 	echo
 
 	echo ">> verifying data, post-restore"
@@ -114,44 +114,47 @@ cat <<EOF
 
 EOF
 echo ">> configuring SHIELD"
-buckler create-target      \
-  --name     consul        \
-  --summary  Consul        \
-  --plugin   consul        \
-  --agent   "$TARGET:5444"
+cat <<EOF | shield import -
+core:  http://<%= link('shield').instances[0].address %>:8080
+token: $SHIELD_AUTH_TOKEN
 
-buckler create-target                    \
-  --name     consul-ssl                  \
-  --summary "Consul with SSL"            \
-  --plugin   consul                      \
-  --agent   "$TARGET:5444"               \
-  --data     host=https://localhost:8501 \
-  --data     skip_ssl_validation=true
+tenants:
+  - name: tenant1
+    policies:
+      - name: short-term
+        days: 2
 
-buckler create-job          \
-  --name       consul-daily \
-  --summary   "Consul"      \
-  --paused                  \
-  --policy     short-term   \
-  --schedule  "daily 4am"   \
-  --store      s3           \
-  --target     consul
+    systems:
+      - name:   consul-notls
+        plugin: consul
+        agent:  $TARGET:5444
+        jobs:
+          - name:    consul-notls-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+            paused:  yes
 
-buckler create-job              \
-  --name       consul-ssl-daily \
-  --summary   "Consul SSL"      \
-  --paused                      \
-  --retention short-term        \
-  --schedule  "daily 5am"       \
-  --store     s3                \
-  --target    consul-ssl
+      - name:   consul-tls
+        plugin: consul
+        agent:  $TARGET:5444
+        config:
+          host:                https://localhost:8501
+          skip_ssl_validation: yes
+        jobs:
+          - name:    consul-tls-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+            paused:  yes
+EOF
 
 echo ">> Testing Consul"
-run_tests consul http://$TARGET:8500
+run_tests consul-notls http://$TARGET:8500
 rc=$?
 
 echo ">> Testing Consul with SSL"
-run_tests consul-ssl https://$TARGET:8501
+run_tests consul-tls https://$TARGET:8501
 rc=$(($rc + $?))
 
 exit $rc

@@ -1,5 +1,5 @@
 #!/bin/bash
-source /var/vcap/jobs/run-tests/lib/functions postgres
+source /var/vcap/jobs/tests/lib/functions postgres
 
 psql() {
   command psql -h $TARGET -U vcap "$@"
@@ -19,6 +19,48 @@ cat <<EOF
 
 
 EOF
+echo ">> configuring SHIELD"
+cat <<EOF | shield import -
+core:  http://<%= link('shield').instances[0].address %>:8080
+token: $SHIELD_AUTH_TOKEN
+
+tenants:
+  - name: tenant1
+    policies:
+      - name: short-term
+        days: 2
+
+    systems:
+      - name:   postgres-all
+        plugin: postgres
+        agent:  $TARGET:5444
+        config:
+          pg_host:     localhost
+          pg_user:     vcap
+          pg_password: ''
+        jobs:
+          - name:    postgres-all-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+            paused:  yes
+
+      - name:   postgres-single
+        plugin: postgres
+        agent:  $TARGET:5444
+        config:
+          pg_host:     localhost
+          pg_user:     vcap
+          pg_password: ''
+          pg_database: db1
+        jobs:
+          - name:    postgres-single-daily
+            when:    daily 4am
+            policy:  short-term
+            storage: s3
+            paused:  yes
+EOF
+
 # ALL DATABASES {{{
 echo "> Postgres - All Databases"
 echo ">> setting up test data"
@@ -32,28 +74,8 @@ echo "   db2.t_keys contains:"
 sed -e 's/^/    /' <$TMP/db2.dat
 echo
 
-echo ">> configuring SHIELD"
-buckler create-target                 \
-  --name      postgres-all            \
-  --summary  "Postgres All Databases" \
-  --plugin    postgres                \
-  --data      pg_host=localhost       \
-  --data      pg_user=vcap            \
-  --data      pg_password=            \
-  --agent    "$TARGET:5444"
-
-buckler create-job \
-  --name       postgres-all-daily      \
-  --summary   "Postgres All Databases" \
-  --paused                             \
-  --retention  short-term              \
-  --schedule  "daily 3:05am"           \
-  --store      s3                      \
-  --target     postgres-all
-echo
-
 echo ">> running backup job"
-wait_for_task $(buckler run postgres-all-daily | jq -r '.task_uuid')
+wait_for_task $(shield run-job postgres-all-daily | jq -r '.task_uuid')
 echo
 
 echo ">> trashing the data"
@@ -69,7 +91,7 @@ psql db1 -c '\l' | sed -e 's/^/    /';
 echo
 
 echo ">> restoring from backups"
-wait_for_task $(buckler restore $(buckler archives -t postgres-all | jq -r '.[0].uuid') | jq -r '.task_uuid')
+wait_for_task $(restore_latest postgres-all)
 echo
 
 echo ">> verifying data, post-restore"
@@ -114,29 +136,8 @@ echo "   db2.t_keys contains:"
 sed -e 's/^/    /' <$TMP/db2.dat
 echo
 
-echo ">> configuring SHIELD"
-buckler create-target                   \
-  --name      postgres-single           \
-  --summary  "Postgres Single Database" \
-  --plugin    postgres                  \
-  --data      pg_host=localhost         \
-  --data      pg_user=vcap              \
-  --data      pg_password=              \
-  --data      pg_database=db1           \
-  --agent    "$TARGET:5444"
-
-buckler create-target \
-  --name       postgres-single-daily     \
-  --summary   "Postgres Single Database" \
-  --paused                               \
-  --retention  short-term                \
-  --schedule  "daily 3am"                \
-  --store      s3                        \
-  --target     postgres-single
-echo
-
 echo ">> running backup job"
-wait_for_task $(buckler run postgres-single-daily | jq -r '.task_uuid')
+wait_for_task $(shield run-job postgres-single-daily | jq -r '.task_uuid')
 echo
 
 echo ">> trashing the data"
@@ -152,7 +153,7 @@ psql db2 -c 'SELECT * FROM t_keys ORDER BY ID ASC' | sed -e 's/^/    /';
 echo
 
 echo ">> restoring from backups"
-wait_for_task $(buckler restore $(buckler archives -t postgres-single | jq -r '.[0].uuid') | jq -r '.task_uuid')
+wait_for_task $(restore_latest postgres-single)
 echo
 
 echo ">> verifying data, post-restore"

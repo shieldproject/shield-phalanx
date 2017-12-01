@@ -1,5 +1,11 @@
-check process shield
-  with pidfile /var/vcap/sys/run/shield/shield.pid
-  start program "/var/vcap/jobs/shield/bin/shield start"
-  stop program  "/var/vcap/jobs/shield/bin/shield stop"
+check process vault
+  with pidfile   /var/vcap/sys/run/shield/vault.pid
+  start program "/var/vcap/jobs/shield/bin/vault start"
+  stop program  "/var/vcap/jobs/shield/bin/vault stop"
+  group vcap
+
+check process shieldd
+  with pidfile   /var/vcap/sys/run/shield/core.pid
+  start program "/var/vcap/jobs/shield/bin/shieldd start"
+  stop program  "/var/vcap/jobs/shield/bin/shieldd stop"
   group vcap
