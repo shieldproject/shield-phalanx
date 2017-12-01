@@ -28,4 +28,5 @@ target/postgresql-9.6.1.tar.bz2:
   sha: 4209970c9aaf91ebb2a3b8a2e359419e5192b4ad
 vault/vault_0.9.0_linux_amd64.zip:
   size: 17571361
+  object_id: 3761d729-c3cd-404f-76d8-e25dbe6f537b
   sha: e33a0ff018fa7d7c75f644529106ec5b4abc1d44
