@@ -6,6 +6,7 @@ set -eu
 export HOME=/var/vcap
 
 # kids, don't do this at home
+sudo apt-get update
 sudo apt-get install -y python-dev
 
 unzip awscli/awscli-bundle.zip
