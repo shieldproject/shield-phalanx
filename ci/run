@@ -53,9 +53,34 @@ export BOSH_ENVIRONMENT=${BOSH_LITE_TARGET}
 export BOSH_CLIENT=${BOSH_LITE_USERNAME}
 export BOSH_CLIENT_SECRET=${BOSH_LITE_PASSWORD}
 export BOSH_DEPLOYMENT=${BOSH_LITE_DEPLOYMENT}
+export BOSH_CA_CERT='-----BEGIN CERTIFICATE-----
+MIIEPzCCAqegAwIBAgIQXMS6CpyVnmKuPEQv4HqzQjANBgkqhkiG9w0BAQsFADAz
+MQwwCgYDVQQGEwNVU0ExFjAUBgNVBAoTDUNsb3VkIEZvdW5kcnkxCzAJBgNVBAMT
+AmNhMB4XDTE3MTAyNzA2NTc0MFoXDTE4MTAyNzA2NTc0MFowPDEMMAoGA1UEBhMD
+VVNBMRYwFAYDVQQKEw1DbG91ZCBGb3VuZHJ5MRQwEgYDVQQDEwsxMC41OC4xMTEu
+NDCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBAONmfES4LKDxwdH6mV99
+7Gpxidewe5AiZxazAvSUBTnNBj13kUrfqyQ8flpjLpq+sgOQNgSfRdGVMQ6vW5Vy
+FzJpnGeZXuGCuxoRrYFZ4CPduyFRRJuResOvvOSBsjGGjLRbrePNFEpSd3pC7T+5
+UJB+o5TFosrLEDIc3RNi0OBqY21I7tFk8kzUm9CT4QwCuDc19umeRP2MlXcX9wQ1
+k5+CePHOgLkSZHcsfFnPZLQcpe35fYdV2Vwnh2ygty5XWYHS+eXCH082IiVyP3i2
+tbYdf0/iAzxvHeUBfz4gx6Bu67tbJzwtZct+3kdWymdnDN5LtNCuNHIMXkcUwiJq
+M4P/C7umt2sR0sb43EhK9IQIOCvNNRU2qB7bvcDg6jgK6PM6/t0LybEwUgJ9QPbg
+UxtOYMB7+gPI7z4gM6yC7Lj3BDAGXuE54CxfVjn9Zh4IbqDwFrEPgEcxZqV+p/4q
+2Tl2IPZGRcwZafFbPpRCoMK1TQedIN61JK0ffyftNWxOnQIDAQABo0YwRDAOBgNV
+HQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDAYDVR0TAQH/BAIwADAP
+BgNVHREECDAGhwQKOm8EMA0GCSqGSIb3DQEBCwUAA4IBgQDPFjj9nTBzb6AJIKyF
+AmdPdVtVjsLjNPOe5VrpFv9nQe1MdOWFbhoFrBnhw9+3XXGfbndHyHDH2CoA0W07
+/6k17VMbLtq7U6HcmaCbPGqGtsf8b1dSUwFagncHu1p7G3sduZTe5lz6tebs/O0t
+1inKyJTuaeEYQQzsylvX1qcBkK7zWD00WpkaaaSXjRTNzw8h+pqksDLmDI1Xqefk
+AYeu8I0MfAqeRKHFZzSM5g0tob7yqex/RPgI50ZGp/P3tEjFZIFzuL8DSzg5HQbj
+y9MBpwc+49fAo14WhNJYuaHefbHemPGlFevzOhlceXkTG3XEW1DhwgwnP5oDunOZ
+9eXuaDEwd+3A0dOpVgwWW2sUsz9uPZ/KfR7YpBPxSSLXDnhmxpmyysYpRriTuu0a
+XteQKWxtaR1zXCeZlF+o7DOgBb8C0md0l9BkuUoA/2kuZDxwq/4wjoWQZT39vfym
+IkBJSHt+ifNpW144IS1U0nW0apLfuGSv6/cL8q1pLOHiElw=
+-----END CERTIFICATE-----'
 
 header "Cleaning up from any previous deployments..."
-bosh delete-deployment -n || echo "continuing on..."
+bosh2 delete-deployment -n || echo "continuing on..."
 
 header "Creating candidate BOSH release..."
 bosh2 create-release --force
@@ -75,8 +100,8 @@ header "Running the Phalanx test errand..."
 bosh2 run-errand tests
 
 header "Cleaning up..."
-bosh delete-deployment -n || echo "continuing on..."
-bosh clean-up -n || echo "continuing on..."
+bosh2 delete-deployment -n || echo "continuing on..."
+bosh2 clean-up -n || echo "continuing on..."
 popd &>/dev/null
 
 echo
