@@ -55,7 +55,7 @@ export BOSH_CLIENT_SECRET=${BOSH_LITE_PASSWORD}
 export BOSH_DEPLOYMENT=${BOSH_LITE_DEPLOYMENT}
 
 header "Cleaning up from any previous deployments..."
-bosh delete-deployment -n --force || echo "continuing on..."
+bosh delete-deployment -n || echo "continuing on..."
 
 header "Creating candidate BOSH release..."
 bosh2 create-release --force
