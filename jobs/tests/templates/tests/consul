@@ -6,7 +6,7 @@ setkey() {
   local key=$2
   local val=$3
 
-  if [[ -z $(getkey $key) ]]; then
+  if [[ -z $(getkey $url $key) ]]; then
     echo "   creating new key '$key' with value '$val'"
   else
     echo "   changing key '$key' from '$(getkey $url $key)' -> '$val'"
