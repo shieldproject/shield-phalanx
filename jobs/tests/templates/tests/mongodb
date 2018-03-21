@@ -53,6 +53,10 @@ echo ">> running backup job"
 wait_for_task $(shield run-job mongodb-all-daily | jq -r '.task_uuid')
 echo
 
+if ! check_encryption mongodb-all; then
+    rc=1
+fi
+
 echo ">> trashing the data"
 echo "   deleting all of the data out of 'db'"
 mongo --eval 'db.collection.deleteMany({})'

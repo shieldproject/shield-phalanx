@@ -29,3 +29,21 @@ restore_latest() {
   local target=$1
   shield restore-archive "$(shield archives --target $target | jq -r '.[0].uuid')" | jq -r '.uuid'
 }
+
+check_encryption() {
+    local target=$1
+    local archive="$(shield archives --target $target | jq -r '.[0].key')"
+    echo "Attempting to validate encryption for archive: $archive"
+    aws s3api get-object --bucket $BUCKET --key $archive test_archive > /dev/null
+    local rc=0
+    if file --mime-type "test_archive" | grep -q bzip2$; then
+        echo "!! Backup Archive is unencrypted - validate encryption process before release !!"
+        echo
+        rc=1
+    else
+        echo "Backup archive appears to be encrypted."
+        echo
+    fi
+    rm -f test_archive
+    return $rc
+}

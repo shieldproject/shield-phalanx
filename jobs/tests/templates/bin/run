@@ -19,7 +19,7 @@ echo
 AWS_ACCESS_KEY="<%= p('aws.access_key') %>"
 AWS_SECRET_KEY="<%= p('aws.secret_key') %>"
 # configure AWS # {{{
-BUCKET=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | sha1sum | awk '{print $1}')-phalanx
+export BUCKET=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | sha1sum | awk '{print $1}')-phalanx
 echo "CREATING NEW AWS BUCKET '$BUCKET'"
 echo "> Configuring AWS CLI"
 rm -rf ~/.aws ; mkdir ~/.aws
@@ -81,6 +81,7 @@ for run in /var/vcap/jobs/tests/tests/*; do
 	chmod 0755 $run
 	if ! $run $*; then
 		failed=$(( failed + 1 ))
+        echo "$job failed" | tr a-z A-Z
 		echo "- $job failed" >>$TMP/FAILURE
 	else
 		echo

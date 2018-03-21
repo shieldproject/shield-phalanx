@@ -63,6 +63,10 @@ run_tests() {
 	wait_for_task $(shield run-job ${target}-daily | jq -r '.task_uuid')
 	echo
 
+    if ! check_encryption ${target}; then
+        rc=1
+    fi
+
 	echo ">> trashing the data"
 	setkey $url test1 "this is incorrect"
 	setkey $url test3 new-key $url

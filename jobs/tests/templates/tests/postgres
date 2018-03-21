@@ -78,6 +78,10 @@ echo ">> running backup job"
 wait_for_task $(shield run-job postgres-all-daily | jq -r '.task_uuid')
 echo
 
+if ! check_encryption postgres-all; then
+    rc=1
+fi
+
 echo ">> trashing the data"
 echo "   deleting all db1.t_vals records with id's greater than 2"
 psql db1 -c 'DELETE FROM t_vals WHERE id > 2'
@@ -139,6 +143,10 @@ echo
 echo ">> running backup job"
 wait_for_task $(shield run-job postgres-single-daily | jq -r '.task_uuid')
 echo
+
+if ! check_encryption postgres-single; then
+    rc=1
+fi
 
 echo ">> trashing the data"
 echo "   deleting all db1.t_vals records with id's greater than 2"
