@@ -27,5 +27,5 @@ wait_for_task() {
 
 restore_latest() {
   local target=$1
-  shield restore-archive "$(shield archives --target $target | jq -r '.[0].uuid')" | jq -r '.task_uuid'
+  shield restore-archive "$(shield archives --target $target | jq -r '.[0].uuid')" | jq -r '.uuid'
 }

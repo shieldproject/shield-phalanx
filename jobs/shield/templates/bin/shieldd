@@ -20,7 +20,7 @@ case $1 in
 
     chpst -u vcap:vcap \
       /var/vcap/packages/shield/bin/shield-schema \
-        -d $DAT_DIR/main.db
+        -d $DAT_DIR/shield.db
 
     echo "$(date) starting up shieldd"
     echo $$ > $PIDFILE
