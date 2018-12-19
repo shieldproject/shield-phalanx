@@ -18,7 +18,7 @@ header() {
 }
 
 header "Connecting to BOSH..."
-bosh2 env
+bosh env
 
 VERSION=$(cat $VERSION/version)
 
@@ -41,11 +41,11 @@ pushd ${PHALANX} &>/dev/null
 header "Deploying Phalanx for SHIELD v${VERSION}..."
 
 header "Cleaning up from any previous deployments..."
-bosh2 delete-deployment -n || echo "continuing on..."
+bosh delete-deployment -n || echo "continuing on..."
 
 header "Creating candidate BOSH release..."
-bosh2 create-release --force --timestamp-version
-bosh2 upload-release || echo "continuing on..."
+bosh create-release --force --timestamp-version
+bosh upload-release || echo "continuing on..."
 
 header "Deploying to BOSH-lite..."
 cat <<EOF | spruce merge ci/manifest.yml - > .ci.yml
@@ -54,15 +54,15 @@ meta:
     access_key: (( grab \$AWS_ACCESS_KEY ))
     secret_key: (( grab \$AWS_SECRET_KEY ))
 EOF
-bosh2 -n deploy .ci.yml
+bosh -n deploy .ci.yml
 rm -f .ci.yml
 
 header "Running the Phalanx test errand..."
-bosh2 run-errand phalanx-tests
+bosh run-errand phalanx-tests
 
 header "Cleaning up..."
-bosh2 delete-deployment -n || echo "continuing on..."
-bosh2 clean-up -n || echo "continuing on..."
+bosh delete-deployment -n || echo "continuing on..."
+bosh clean-up -n || echo "continuing on..."
 popd &>/dev/null
 
 echo
