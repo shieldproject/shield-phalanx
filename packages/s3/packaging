@@ -1,0 +1,6 @@
+#!/bin/bash
+set -eu
+
+mkdir -p $BOSH_INSTALL_TARGET/bin
+cp s3/s3 $BOSH_INSTALL_TARGET/bin/s3
+chmod 0755 $BOSH_INSTALL_TARGET/bin/s3

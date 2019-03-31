@@ -1,11 +1,11 @@
-awscli/awscli-bundle.zip:
-  size: 8393883
-  object_id: 403c0076-dd57-4594-94ad-27dd8639f7ca
-  sha: 9dbcc0f022a91baccedbcc4307b3de0dcddf2290
 jq/jq:
   size: 1600813
   object_id: a5a4bccc-0562-451b-b4bf-6a25567db222
   sha: 5ac55877f41916b80fe546e16d58678cca9aae6d
+s3/s3:
+  size: 6991381
+  object_id: 4b3a1cd0-6496-467f-64b0-4d37cc58b279
+  sha: ad8065e53d26bfedee1df9ac14aa64c997dc6280
 tar/libarchive-3.1.2.tar.gz:
   size: 4527540
   object_id: 8e80fcf7-b356-4279-bb24-496effaea3c0

@@ -1,0 +1,6 @@
+---
+name: s3
+dependencies: []
+files:
+  # https://github.com/jhunt/s3/releases/download/v0.2.6/s3-linux-amd64
+  - s3/s3

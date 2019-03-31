@@ -5,7 +5,7 @@ test -z "${ERRAND_DEBUG:-<% if p('debug') %>1<% end %>}" || set -x
 
 export TARGET="<%= link('shield').instances[0].address %>"
 export TMP=/var/vcap/sys/tmp ; mkdir -p $TMP
-for pkg in consul mariadb mongodb postgres shield jq awscli; do
+for pkg in consul mariadb mongodb postgres shield jq s3; do
   export PATH=$PATH:/var/vcap/packages/$pkg/bin
 done
 
@@ -16,23 +16,13 @@ echo "#"
 echo "################################################################"
 echo
 
-AWS_ACCESS_KEY="<%= p('aws.access_key') %>"
-AWS_SECRET_KEY="<%= p('aws.secret_key') %>"
+export S3_AKI="<%= p('aws.access_key') %>"
+export S3_KEY="<%= p('aws.secret_key') %>"
 # configure AWS # {{{
-export BUCKET=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | sha1sum | awk '{print $1}')-phalanx
+export S3_BUCKET=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | sha1sum | awk '{print $1}')-phalanx
 echo "CREATING NEW AWS BUCKET '$BUCKET'"
-echo "> Configuring AWS CLI"
-rm -rf ~/.aws ; mkdir ~/.aws
-cat >~/.aws/config <<EOF
-[default]
-EOF
-cat >~/.aws/credentials <<EOF
-[default]
-aws_access_key_id = $AWS_ACCESS_KEY
-aws_secret_access_key = $AWS_SECRET_KEY
-EOF
 echo "> Creating AWS bucket '$BUCKET'"
-aws s3 mb s3://$BUCKET
+s3 create-bucket $S3_BUCKET
 echo
 # }}}
 # configure SHIELD # {{{
@@ -95,10 +85,8 @@ echo
 # teardown AWS # {{{
 echo
 echo "CLEANING UP AWS BUCKET '$BUCKET'"
-echo "> Removing all files in AWS bucket '$BUCKET'"
-aws s3 rm --recursive s3://$BUCKET
-echo "> Removing AWS bucket '$BUCKET'"
-aws s3 rb s3://$BUCKET
+echo "> Removing AWS bucket '$BUCKET' (and all of its files)"
+s3 rm-bucket -R $S3_BUCKET
 # }}}
 
 

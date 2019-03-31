@@ -7,7 +7,7 @@ packages:
   - postgres
   - shield
   - jq
-  - awscli
+  - s3
 
 templates:
   bin/run:                bin/run
