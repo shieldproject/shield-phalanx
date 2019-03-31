@@ -56,8 +56,8 @@ tenants:
         plugin: s3
         agent: 127.0.0.1:5444
         config:
-          access_key_id:     $AWS_ACCESS_KEY
-          secret_access_key: $AWS_SECRET_KEY
+          access_key_id:     $S3_AKI
+          secret_access_key: $S3_KEY
           bucket:            $S3_BUCKET
           prefix:            ph/al/an/x
 EOF
