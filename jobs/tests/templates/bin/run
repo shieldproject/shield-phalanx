@@ -20,8 +20,8 @@ export S3_AKI="<%= p('aws.access_key') %>"
 export S3_KEY="<%= p('aws.secret_key') %>"
 # configure AWS # {{{
 export S3_BUCKET=$(dd if=/dev/urandom bs=1 count=32 2>/dev/null | sha1sum | awk '{print $1}')-phalanx
-echo "CREATING NEW AWS BUCKET '$BUCKET'"
-echo "> Creating AWS bucket '$BUCKET'"
+echo "CREATING NEW AWS BUCKET '$S3_BUCKET'"
+echo "> Creating AWS bucket '$S3_BUCKET'"
 s3 create-bucket $S3_BUCKET
 echo
 # }}}
@@ -58,7 +58,7 @@ tenants:
         config:
           access_key_id:     $AWS_ACCESS_KEY
           secret_access_key: $AWS_SECRET_KEY
-          bucket:            $BUCKET
+          bucket:            $S3_BUCKET
           prefix:            ph/al/an/x
 EOF
 # }}}
@@ -84,8 +84,8 @@ echo
 # }}}
 # teardown AWS # {{{
 echo
-echo "CLEANING UP AWS BUCKET '$BUCKET'"
-echo "> Removing AWS bucket '$BUCKET' (and all of its files)"
+echo "CLEANING UP AWS BUCKET '$S3_BUCKET'"
+echo "> Removing AWS bucket '$S3_BUCKET' (and all of its files)"
 s3 rm-bucket -R $S3_BUCKET
 # }}}
 
