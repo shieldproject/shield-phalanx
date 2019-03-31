@@ -14,10 +14,6 @@ case $1 in
     mkdir -p $RUN_DIR $DAT_DIR
     chown vcap:vcap $DAT_DIR
 
-    if [[ ! -f $DAT_DIR/key ]]; then
-      chpst -u vcap:vcap ssh-keygen -t rsa -f $DAT_DIR/key -N ''
-    fi
-
     chpst -u vcap:vcap \
       /var/vcap/packages/shield/bin/shield-schema \
         -d $DAT_DIR/shield.db
