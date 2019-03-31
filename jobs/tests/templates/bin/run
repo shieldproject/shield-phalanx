@@ -71,7 +71,7 @@ for run in /var/vcap/jobs/tests/tests/*; do
 	chmod 0755 $run
 	if ! $run $*; then
 		failed=$(( failed + 1 ))
-        echo "$job failed" | tr a-z A-Z
+		echo "$job failed" | tr a-z A-Z
 		echo "- $job failed" >>$TMP/FAILURE
 	else
 		echo
