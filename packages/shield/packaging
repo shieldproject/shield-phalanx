@@ -4,12 +4,16 @@ set -eu
 tar -xzf shield-rc/shield-server-linux-amd64.tar.gz
 cd shield-server-linux-amd64
 mkdir -p ${BOSH_INSTALL_TARGET}/bin
-cp agent/shield-agent   ${BOSH_INSTALL_TARGET}/bin
-cp agent/shield-report  ${BOSH_INSTALL_TARGET}/bin
-cp cli/shield           ${BOSH_INSTALL_TARGET}/bin
-cp daemon/shieldd       ${BOSH_INSTALL_TARGET}/bin
-cp daemon/shield-schema ${BOSH_INSTALL_TARGET}/bin
-cp daemon/shield-pipe   ${BOSH_INSTALL_TARGET}/bin
-cp crypter/shield-crypt ${BOSH_INSTALL_TARGET}/bin
-cp -R webui             ${BOSH_INSTALL_TARGET}/webui
-cp -R plugins           ${BOSH_INSTALL_TARGET}/plugins
+cp agent/shield-agent      ${BOSH_INSTALL_TARGET}/bin
+cp agent/shield-report     ${BOSH_INSTALL_TARGET}/bin
+cp cli/shield              ${BOSH_INSTALL_TARGET}/bin
+cp daemon/shieldd          ${BOSH_INSTALL_TARGET}/bin
+cp daemon/shield-schema    ${BOSH_INSTALL_TARGET}/bin
+cp daemon/shield-pipe      ${BOSH_INSTALL_TARGET}/bin
+cp daemon/shield-recover   ${BOSH_INSTALL_TARGET}/bin
+cp daemon/shield-restarter ${BOSH_INSTALL_TARGET}/bin
+cp crypter/shield-crypt    ${BOSH_INSTALL_TARGET}/bin
+cp -R webui                ${BOSH_INSTALL_TARGET}/webui
+cp -R plugins              ${BOSH_INSTALL_TARGET}/plugins
+chmod 0755 ${BOSH_INSTALL_TARGET}/bin/* \
+           ${BOSH_INSTALL_TARGET}/plugins/*
