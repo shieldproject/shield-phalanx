@@ -47,10 +47,6 @@ token: $SHIELD_AUTH_TOKEN
 tenants:
   - name: tenant1
 
-    policies:
-      - name: short-term
-        days: 2
-
     storage:
       - name: s3
         plugin: s3

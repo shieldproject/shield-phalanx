@@ -124,9 +124,6 @@ token: $SHIELD_AUTH_TOKEN
 
 tenants:
   - name: tenant1
-    policies:
-      - name: short-term
-        days: 2
 
     systems:
       - name:   consul-notls
@@ -135,7 +132,7 @@ tenants:
         jobs:
           - name:    consul-notls-daily
             when:    daily 4am
-            policy:  short-term
+            retain:  2d
             storage: s3
             paused:  yes
 
@@ -148,7 +145,7 @@ tenants:
         jobs:
           - name:    consul-tls-daily
             when:    daily 4am
-            policy:  short-term
+            retain:  2d
             storage: s3
             paused:  yes
 EOF

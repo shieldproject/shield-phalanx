@@ -26,9 +26,6 @@ token: $SHIELD_AUTH_TOKEN
 
 tenants:
   - name: tenant1
-    policies:
-      - name: short-term
-        days: 2
 
     systems:
       - name:   mysql-all
@@ -40,7 +37,7 @@ tenants:
         jobs:
           - name:    mysql-all-daily
             when:    daily 4am
-            policy:  short-term
+            retain:  2d
             storage: s3
             paused:  yes
 
@@ -54,7 +51,7 @@ tenants:
         jobs:
           - name:    mysql-single-daily
             when:    daily 4am
-            policy:  short-term
+            retain:  2d
             storage: s3
             paused:  yes
 EOF

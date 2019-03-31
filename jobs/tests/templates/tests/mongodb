@@ -26,19 +26,18 @@ token: $SHIELD_AUTH_TOKEN
 
 tenants:
   - name: tenant1
-    policies:
-      - name: short-term
-        days: 2
 
     systems:
       - name:   mongodb-all
         plugin: mongo
         agent:  $TARGET:5444
+        config: {}
         jobs:
           - name:    mongodb-all-daily
             when:    daily 4am
-            policy:  short-term
+            retain:  2d
             storage: s3
+            paused:  yes
 EOF
 echo
 
