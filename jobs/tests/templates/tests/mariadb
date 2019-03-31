@@ -34,6 +34,7 @@ tenants:
         config:
           mysql_user:     vcap
           mysql_password: letmein
+          mysql_bindir:   /var/vcap/packages/mariadb/bin
         jobs:
           - name:    mysql-all-daily
             when:    daily 4am
@@ -47,6 +48,7 @@ tenants:
         config:
           mysql_user:     vcap
           mysql_password: letmein
+          mysql_bindir:   /var/vcap/packages/mariadb/bin
           mysql_database: db1
         jobs:
           - name:    mysql-single-daily
