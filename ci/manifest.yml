@@ -18,8 +18,8 @@ releases:
 update:
   canaries: 1
   max_in_flight: 1
-  canary_watch_time: 1000-300000
-  update_watch_time: 1000-300000
+  canary_watch_time: 1000-900000
+  update_watch_time: 1000-900000
   serial: false
 
 instance_groups:
