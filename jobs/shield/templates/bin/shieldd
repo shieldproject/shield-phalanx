@@ -11,6 +11,9 @@ exec >>$LOG_DIR/core.log 2>&1
 
 case $1 in
   start)
+    echo "$(date) starting up shieldd"
+    echo $$ > $PIDFILE
+
     mkdir -p $RUN_DIR $DAT_DIR
     chown vcap:vcap $DAT_DIR
 
@@ -18,8 +21,6 @@ case $1 in
       /var/vcap/packages/shield/bin/shield-schema \
         -d $DAT_DIR/shield.db
 
-    echo "$(date) starting up shieldd"
-    echo $$ > $PIDFILE
     exec chpst -u vcap:vcap \
       /var/vcap/packages/shield/bin/shieldd \
         --log-level debug \
