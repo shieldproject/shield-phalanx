@@ -123,7 +123,7 @@ core:  http://<%= link('shield').instances[0].address %>:8080
 token: $SHIELD_AUTH_TOKEN
 
 tenants:
-  - name: tenant1
+  - name: Default Tenant
 
     systems:
       - name:   consul-notls

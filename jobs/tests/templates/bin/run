@@ -31,7 +31,7 @@ echo "> Targeting backend at <%= link('shield').instances[0].address %>"
 
 shield api test http://<%= link('shield').instances[0].address %>:8080
 export SHIELD_CORE=test
-export SHIELD_TENANT=tenant1
+export SHIELD_TENANT="Default Tenant"
 
 (export SHIELD_CORE_MASTER=sekrit
  shield init || shield unlock)
@@ -45,7 +45,7 @@ core: http://<%= link('shield').instances[0].address %>:8080
 token: $SHIELD_AUTH_TOKEN
 
 tenants:
-  - name: tenant1
+  - name: Default Tenant
 
     storage:
       - name: s3
