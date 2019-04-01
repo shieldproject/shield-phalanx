@@ -6,20 +6,26 @@ export PGDATA=$STORE_DIR/postgres
 
 case $1 in
   start)
-    pid_guard $PIDFILE $TARGET
+    echo "[$(date)] $TARGET phalanx target starting up (pid $$)..."
+
     test -d $PGDATA || chpst -u vcap:vcap initdb
     # FIXME: remove once we can configure the pg_dumpall bin path
     if [[ ! -e /var/vcap/packages/postgres-9.4 ]]; then
       ln -s /var/vcap/packages/postgres /var/vcap/packages/postgres-9.4
     fi
+
+    pid_guard $PIDFILE $TARGET
     echo $$ > $PIDFILE
+    echo "[$(date)] $TARGET phalanx target exec'ing..."
     exec chpst -u vcap:vcap postgres \
       -h 0.0.0.0 \
       -c hba_file=$JOB_DIR/config/postgres/hba.conf
     ;;
 
   stop)
+    echo "[$(date)] $TARGET phalanx target shutting down..."
     kill_and_wait $PIDFILE
+    echo "[$(date)] $TARGET phalanx target shut down."
     ;;
 
   *)

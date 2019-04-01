@@ -5,6 +5,7 @@ export LANG=en_US.UTF-8
 
 case $1 in
   start)
+    echo "[$(date)] $TARGET phalanx target starting up (pid $$)..."
 
     # check for certificates
     if ! (openssl x509 -noout -in ${JOB_DIR}/tls/peer/ca.pem   && \
@@ -16,6 +17,7 @@ case $1 in
 
     pid_guard $PIDFILE $TARGET
     echo $$ > $PIDFILE
+    echo "[$(date)] $TARGET phalanx target exec'ing..."
     exec chpst -u vcap:vcap consul agent \
       -config-file ${JOB_DIR}/config/consul/consul.conf \
       -bind 0.0.0.0 \
@@ -24,7 +26,9 @@ case $1 in
     ;;
 
   stop)
+    echo "[$(date)] $TARGET phalanx target shutting down..."
     kill_and_wait $PIDFILE
+    echo "[$(date)] $TARGET phalanx target shut down."
     ;;
 
   *)
