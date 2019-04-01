@@ -8,6 +8,8 @@ DATADIR=/var/vcap/store/targets/mariadb
 case $1 in
   start)
     echo "[$(date)] $TARGET phalanx target starting up (pid $$)..."
+    pid_guard $PIDFILE $TARGET
+    echo $$ > $PIDFILE
 
     mkdir -p $DATADIR
     if [[ ! -d $DATADIR/mysql ]]; then
@@ -19,8 +21,6 @@ case $1 in
       ln -s /var/vcap/packages/mariadb /var/vcap/packages/shield-mysql
     fi
 
-    pid_guard $PIDFILE $TARGET
-    echo $$ > $PIDFILE
     echo "[$(date)] $TARGET phalanx target exec'ing..."
     exec chpst -u vcap:vcap mysqld
     ;;
