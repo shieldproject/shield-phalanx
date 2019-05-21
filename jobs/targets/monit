@@ -21,3 +21,10 @@ check process postgres
   start program "/var/vcap/jobs/targets/bin/postgres start"
   stop program  "/var/vcap/jobs/targets/bin/postgres stop"
   group vcap
+
+check process vault
+  with pidfile /var/vcap/sys/run/targets/vault.pid
+  start program "/var/vcap/jobs/targets/bin/vault start"
+  stop program  "/var/vcap/jobs/targets/bin/vault stop"
+  group vcap
+

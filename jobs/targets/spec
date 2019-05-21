@@ -6,12 +6,14 @@ packages:
   - mariadb
   - mongodb
   - postgres
+  - vault-latest
 
 templates:
   bin/consul:     bin/consul
   bin/mariadb:    bin/mariadb
   bin/mongodb:    bin/mongodb
   bin/postgres:   bin/postgres
+  bin/vault:      bin/vault
 
   config/consul/consul.conf: config/consul/consul.conf
 
@@ -19,6 +21,8 @@ templates:
 
   config/mariadb/my.cnf: config/mariadb/my.cnf
   config/mariadb/init:   config/mariadb/init
+
+  config/vault/vault.conf: config/vault/vault.conf
 
   helpers/utils: helpers/utils
 
