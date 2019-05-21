@@ -30,6 +30,6 @@ vault/vault_0.9.0_linux_amd64.zip:
   size: 17571361
   object_id: 3761d729-c3cd-404f-76d8-e25dbe6f537b
   sha: e33a0ff018fa7d7c75f644529106ec5b4abc1d44
-vault/vault_1.1.2_darwin_amd64.zip:
-  size: 35936533
-  sha: 9f382e98f93551b0e139366ea725a461d4b49664
+vault/vault_1.1.2_linux_amd64.zip:
+  size: 35928655
+  sha: d05b738ed3b4f79b1898219f8c77ffbea61cf3ec
