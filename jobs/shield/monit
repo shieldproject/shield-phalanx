@@ -1,4 +1,4 @@
-check process vault
+check process shield-vault
   with pidfile   /var/vcap/sys/run/shield/vault.pid
   start program "/var/vcap/jobs/shield/bin/vault start"
   stop program  "/var/vcap/jobs/shield/bin/vault stop"
