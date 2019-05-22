@@ -3,6 +3,7 @@ set -eu
 
 source /var/vcap/jobs/targets/helpers/utils targets vault
 export LANG=en_US.UTF-8
+export DAT_DIR=$STORE_DIR/vault
 
 case $1 in
   start)
