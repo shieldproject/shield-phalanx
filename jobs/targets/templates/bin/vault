@@ -12,10 +12,10 @@ case $1 in
 
     if chpst -u vcap:vcap /var/vcap/packages/vault-latest/bin/canimlock; then
       sed -i -e 's/^disable_mlock/#disable_mlock/' \
-        $JOB_DIR/config/vault.conf
+        $JOB_DIR/config/vault/vault.conf
     else
       sed -i -e 's/^#disable_mlock/disable_mlock/' \
-        $JOB_DIR/config/vault.conf
+        $JOB_DIR/config/vault/vault.conf
     fi
 
     pid_guard $PIDFILE $TARGET
@@ -24,7 +24,7 @@ case $1 in
     echo "[$(date)] $TARGET phalanx target exec'ing..."
     exec chpst -u vcap:vcap \
       /var/vcap/packages/vault/bin/vault server \
-        -config=$JOB_DIR/config/vault.conf
+        -config=$JOB_DIR/config/vault/vault.conf
     ;;
 
   stop)
