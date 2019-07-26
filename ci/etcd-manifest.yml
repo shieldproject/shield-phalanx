@@ -1,0 +1,58 @@
+name: phalanx-srini
+
+stemcells:
+- alias: default
+  os: ubuntu-xenial
+  version: latest
+
+releases:
+  - { name: shield-phalanx, version: latest }
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  canary_watch_time: 1000-900000
+  update_watch_time: 1000-900000
+  serial: false
+
+instance_groups:
+  - name: shield
+    instances: 1
+    azs:       [z1]
+    vm_type:   default
+    stemcell:  default
+    networks:
+      - name: default
+    jobs:
+      - { release: shield-phalanx, name: shield  }
+      - { release: shield-phalanx, name: agent   }
+      - name: targets
+        release: shield-phalanx
+        properties:
+          tls:
+            ca:
+              certificate: ((tls-ca.certificate))
+              key: ((tls-ca.private_key))
+
+  - name: phalanx-tests
+    lifecycle: errand
+    instances: 1
+    azs:       [z1]
+    vm_type:   default
+    stemcell:  default
+    networks:
+      - name: default
+    jobs:
+      - name:    tests
+        release: shield-phalanx
+        properties:
+          aws:
+            access_key: 
+            secret_key: 
+
+variables:
+  - name: tls-ca
+    type: certificate
+    options:
+      is_ca: yes
+      common_name: ca

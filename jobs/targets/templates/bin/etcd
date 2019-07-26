@@ -1,0 +1,33 @@
+#!/bin/bash
+set -eu
+source /var/vcap/jobs/targets/helpers/utils targets etcd
+export LANG=en_US.UTF-8
+
+
+case $1 in
+  start)
+    echo "[$(date)] $TARGET phalanx target starting up (pid $$)..."
+    pid_guard $PIDFILE $TARGET
+    echo $$ > $PIDFILE
+
+    if [ -d "/var/vcap/store/targets/etcd" ]; then
+      rm -r /var/vcap/store/targets/etcd
+    fi
+
+    echo "[$(date)] $TARGET phalanx target exec'ing..."
+    echo "ETCD without tls starting..."
+    exec chpst -u vcap:vcap etcd --config-file=${JOB_DIR}/config/etcd/etcd.conf.yml
+    ;;
+
+  stop)
+    echo "[$(date)] $TARGET phalanx target shutting down..."
+    kill_and_wait $PIDFILE
+    echo "[$(date)] $TARGET phalanx target shut down."
+    ;;
+
+  *)
+    echo "Usage: $TARGET {start|stop}"
+    ;;
+
+esac
+exit 0

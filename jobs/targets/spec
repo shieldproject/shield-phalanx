@@ -3,6 +3,8 @@ name: targets
 packages:
   - consul
   - certifier
+  - cfssl
+  - etcd
   - mariadb
   - mongodb
   - postgres
@@ -10,12 +12,20 @@ packages:
 
 templates:
   bin/consul:     bin/consul
+  bin/etcd:       bin/etcd
+  bin/etcd-tls:   bin/etcd-tls
   bin/mariadb:    bin/mariadb
   bin/mongodb:    bin/mongodb
   bin/postgres:   bin/postgres
+  bin/pre-start:  bin/pre-start
   bin/vault:      bin/vault
 
   config/consul/consul.conf: config/consul/consul.conf
+
+  config/etcd/tls/cert.pem:   config/etcd/tls/cert.pem
+  config/etcd/tls/key.pem:    config/etcd/tls/key.pem
+  config/etcd/etcd.conf.yml:  config/etcd/etcd.conf.yml
+  config/etcd/etcd-tls.conf.yml:  config/etcd/etcd-tls.conf.yml
 
   config/postgres/hba.conf: config/postgres/hba.conf
 
@@ -29,5 +39,26 @@ templates:
 provides:
   - name: target
     type: target
+    properties:
+      - tls.ca.certificate
+      - tls.ca.key
 
-properties: {}
+consumes:
+  - name: target
+    type: target
+
+properties:
+  tls.ca.certificate:
+    description: |
+      The X.509 Certificate Authority's certificate, in PEM format.
+      This certificate must be valid for the following key usages:
+        - Digital Signing
+        - Key Encipherment
+        - Server Auth (Extended)
+        - Client Auth (Extended)
+  tls.ca.key:
+    description: |
+      The X.509 Certificate Authority's RSA private key, in PEM format.
+      The certificate authority's signing key is necessary to auto-enroll k8s
+      nodes (the `kubelet` job, in this BOSH release) in properly validated
+      mutual TLS setups.
