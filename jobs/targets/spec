@@ -20,21 +20,21 @@ templates:
   bin/pre-start:  bin/pre-start
   bin/vault:      bin/vault
 
-  config/consul/consul.conf: config/consul/consul.conf
+  config/consul/consul.conf:      config/consul/consul.conf
 
-  config/etcd/tls/cert.pem:   config/etcd/tls/cert.pem
-  config/etcd/tls/key.pem:    config/etcd/tls/key.pem
-  config/etcd/etcd.conf.yml:  config/etcd/etcd.conf.yml
+  config/etcd/tls/cert.pem:       config/etcd/tls/cert.pem
+  config/etcd/tls/key.pem:        config/etcd/tls/key.pem
+  config/etcd/etcd.conf.yml:      config/etcd/etcd.conf.yml
   config/etcd/etcd-tls.conf.yml:  config/etcd/etcd-tls.conf.yml
 
-  config/postgres/hba.conf: config/postgres/hba.conf
+  config/postgres/hba.conf:       config/postgres/hba.conf
 
-  config/mariadb/my.cnf: config/mariadb/my.cnf
-  config/mariadb/init:   config/mariadb/init
+  config/mariadb/my.cnf:          config/mariadb/my.cnf
+  config/mariadb/init:            config/mariadb/init
 
-  config/vault/vault.conf: config/vault/vault.conf
+  config/vault/vault.conf:        config/vault/vault.conf
 
-  helpers/utils: helpers/utils
+  helpers/utils:                  helpers/utils
 
 provides:
   - name: target
@@ -59,6 +59,6 @@ properties:
   tls.ca.key:
     description: |
       The X.509 Certificate Authority's RSA private key, in PEM format.
-      The certificate authority's signing key is necessary to auto-enroll k8s
-      nodes (the `kubelet` job, in this BOSH release) in properly validated
+      The certificate authority's signing key is necessary to auto-enroll etcd
+      nodes in properly validated
       mutual TLS setups.

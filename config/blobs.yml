@@ -10,10 +10,19 @@ tar/libarchive-3.1.2.tar.gz:
   size: 4527540
   object_id: 8e80fcf7-b356-4279-bb24-496effaea3c0
   sha: 6a991777ecb0f890be931cec4aec856d1a195489
+target/cfssl_linux-amd64:
+  size: 10376657
+  sha: sha256:eb34ab2179e0b67c29fd55f52422a94fe751527b06a403a79325fed7cf0145bd
+target/cfssljson_linux-amd64:
+  size: 2277873
+  sha: sha256:1c9e628c3b86c3f2f8af56415d474c9ed4c8f9246630bd21c3418dbe5bf6401e
 target/consul_0.7.3_linux_amd64.zip:
   size: 8728187
   object_id: 7d915fa0-64e6-47d5-bd82-bdc0951181ce
   sha: 193527eb29014201d9d242b4e2cefb3a4817f7e4
+target/etcd-v3.3.13-linux-amd64.tar.gz:
+  size: 10423953
+  sha: sha256:2c2e2a9867c1c61697ea0d8c0f74c7e9f1b1cf53b75dff95ca3bc03feb19ea7e
 target/mariadb-10.1.21-linux-x86_64.tar.gz:
   size: 169769845
   object_id: 780c51fe-e0be-428b-aa0a-40958d232381

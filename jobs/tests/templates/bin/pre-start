@@ -25,7 +25,7 @@ cat > ca.json <<EOF
     },
     "profiles": {
       "etcd": {
-        "usages": ["signing", "key encipherment", "server auth", "client auth"],
+        "usages": ["signing", "key encipherment", "client auth"],
         "expiry": "8760h"
       }
     }

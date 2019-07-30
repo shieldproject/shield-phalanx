@@ -1,22 +1,37 @@
 ---
 name: tests
 packages:
-  - etcd
   - cfssl
+  - consul
+  - etcd
+  - mariadb
+  - mongodb
+  - postgres
   - shield
   - jq
   - s3
 
 templates:
-  bin/run:                bin/run
-  bin/pre-start:          bin/pre-start
+  bin/run:                      bin/run
+  bin/pre-start:                bin/pre-start
 
-  data/etcd-tls/tls/cert.pem:      data/etcd-tls/tls/cert.pem
-  data/etcd-tls/tls/key.pem:       data/etcd-tls/tls/key.pem
+  lib/functions:                lib/functions
 
-  lib/functions:          lib/functions
+  tests/consul:                 tests/consul
 
-  tests/etcd:             tests/etcd
+  tests/mongodb:                tests/mongodb
+  data/mongodb/init:            data/mongodb/init
+
+  tests/etcd:                   tests/etcd
+  data/etcd-tls/tls/cert.pem:   data/etcd-tls/tls/cert.pem
+  data/etcd-tls/tls/key.pem:    data/etcd-tls/tls/key.pem
+
+
+  tests/mariadb:                tests/mariadb
+  data/mariadb/init.sql:        data/mariadb/init.sql
+
+  tests/postgres:               tests/postgres
+  data/postgres/init.sql:       data/postgres/init.sql
 
 consumes:
   - name: shield
