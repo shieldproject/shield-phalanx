@@ -50,22 +50,19 @@ gencert() {
   }
 }
 EOF
-  chpst -U vcap:vcap \
-    cfssl gencert \
+  cfssl gencert \
     -ca=$JOB_DIR/tls/cert.pem \
     -ca-key=$JOB_DIR/tls/key.pem \
     -config=ca.json \
     -hostname=$alts \
     -profile=etcd \
     cert.json | \
-  chpst -U vcap:vcap cfssljson -bare out
+      cfssljson -bare out
   mkdir -p $CERTS_DIR/$dest
-  echo "-------"
-  stat out.pem
-  stat out-key.pem
-  echo "-------"
   mv out.pem     $CERTS_DIR/$dest/cert.pem
   mv out-key.pem $CERTS_DIR/$dest/key.pem
+  chown -R vcap:vcap $CERTS_DIR/$dest/cert.pem
+  chown -R vcap:vcap $CERTS_DIR/$dest/key.pem
   echo ">> $CERTS_DIR/$dest/cert.pem"
   openssl x509 -text -in $CERTS_DIR/$dest/cert.pem
   echo
