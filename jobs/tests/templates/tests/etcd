@@ -1,5 +1,8 @@
 #!/bin/bash
 source /var/vcap/jobs/tests/lib/functions etcd
+export PATH=$PATH:/var/vcap/packages/spruce/bin/    
+export PATH=$PATH:/var/vcap/packages/etcd/bin/
+export ETCDCTL_API=3
 
 #Adding keys and values
 addKeyVals() {
@@ -88,9 +91,6 @@ runTests() {
     local url=$2
     local rc=0
 
-    export PATH=$PATH:/var/vcap/packages/etcd/bin/
-    export ETCDCTL_API=3
-
     local authOption
 
     local val1=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
@@ -170,7 +170,8 @@ cat <<EOF
 EOF
 
 echo ">> configuring SHIELD"
-cat <<EOF | shield import -
+cat <<EOF > /var/vcap/jobs/tests/data/etcd-tls/tls/manifest.yml |
+---
 core:  http://<%= link('shield').instances[0].address %>:8080
 token: $SHIELD_AUTH_TOKEN
 
@@ -182,11 +183,12 @@ tenants:
         plugin: etcd
         agent:  $TARGET:5444
         config:
-          endpoints:                http://$TARGET:2379
-          fullOverwrite:            true
-          auth:						true
-          user:                     root
-          pass:                     tests
+          url:                      http://$TARGET:2379
+          timeout:                  "2"
+          overwrite:                true
+          auth:			            "Role-Based Authentication"
+          username:                 root
+          password:                 tests
         jobs:
           - name:    etcd-notls-daily
             when:    daily 1am
@@ -198,12 +200,13 @@ tenants:
         plugin: etcd
         agent:  $TARGET:5444
         config:
-          endpoints:                https://$TARGET:2479
-          fullOverwrite:            true
-          auth:						true
-          caCertPath:				/var/vcap/jobs/targets/config/etcd/tls/cert.pem
-          clientCertPath:			/var/vcap/data/targets/etcd/cert.pem
-          clientKeyPath:			/var/vcap/data/targets/etcd/key.pem
+          url:                      https://$TARGET:2479
+          timeout:                  "2"
+          overwrite:                true
+          auth:                     "Certificate-Based Authentication"
+          ca_cert:                  (( file "/var/vcap/jobs/tests/data/etcd-tls/tls/cert.pem" ))
+          client_cert:              (( file "/var/vcap/data/targets/etcd/cert.pem" ))
+          client_key:               (( file "/var/vcap/data/targets/etcd/key.pem" ))
         jobs:
           - name:    etcd-tls-daily
             when:    daily 1am
@@ -211,6 +214,9 @@ tenants:
             storage: s3
             paused:  yes
 EOF
+
+spruce merge /var/vcap/jobs/tests/data/etcd-tls/tls/manifest.yml > /var/vcap/jobs/tests/data/etcd-tls/tls/manifest-cert.yml
+shield import /var/vcap/jobs/tests/data/etcd-tls/tls/manifest-cert.yml
 
 echo "Testing etcd without tls..."
 runTests etcd-notls http://$TARGET:2379

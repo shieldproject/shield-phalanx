@@ -35,6 +35,9 @@ target/postgresql-9.6.1.tar.bz2:
   size: 19260568
   object_id: 1e4aa257-e941-4c10-ba25-0b4b46f9142a
   sha: 4209970c9aaf91ebb2a3b8a2e359419e5192b4ad
+target/spruce-linux-amd64:
+  size: 18471394
+  sha: sha256:414cb655257526134b61532878518b8a0ff30ab2acc172aaf1e4dd0d98068915
 vault/vault_0.9.0_linux_amd64.zip:
   size: 17571361
   object_id: 3761d729-c3cd-404f-76d8-e25dbe6f537b

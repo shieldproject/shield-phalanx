@@ -49,7 +49,7 @@ gencert() {
   }
 }
 EOF
-  chpst -u vcap:vcap \
+  chpst -U vcap:vcap \
     cfssl gencert \
     -ca=$JOB_DIR/tls/cert.pem \
     -ca-key=$JOB_DIR/tls/key.pem \
@@ -57,15 +57,13 @@ EOF
     -hostname=$alts \
     -profile=etcd \
     cert.json | \
-      cfssljson -bare out
+  chpst -U vcap:vcap cfssljson -bare out
   mkdir -p $CERTS_DIR/$dest
   mv out.pem     $CERTS_DIR/$dest/cert.pem
   mv out-key.pem $CERTS_DIR/$dest/key.pem
   echo ">> $CERTS_DIR/$dest/cert.pem"
   openssl x509 -text -in $CERTS_DIR/$dest/cert.pem
   echo
-  chown -R vcap:vcap $CERTS_DIR/$dest/cert.pem
-  chown -R vcap:vcap $CERTS_DIR/$dest/key.pem
 }
 
 echo "[$(date)] $BIN/$$: issuing the etcd server certificate for etcd"

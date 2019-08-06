@@ -1,0 +1,6 @@
+#!/bin/bash
+set -eu
+
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
+cp target/spruce-linux-amd64     ${BOSH_INSTALL_TARGET}/bin/spruce
+chmod 755 ${BOSH_INSTALL_TARGET}/bin/*
