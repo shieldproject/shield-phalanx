@@ -20,12 +20,12 @@ templates:
 
   tests/consul:                 tests/consul
 
-  tests/mongodb:                tests/mongodb
-  data/mongodb/init:            data/mongodb/init
-
   tests/etcd:                   tests/etcd
   data/etcd-tls/tls/cert.pem:   data/etcd-tls/tls/cert.pem
   data/etcd-tls/tls/key.pem:    data/etcd-tls/tls/key.pem
+
+  tests/mongodb:                tests/mongodb
+  data/mongodb/init:            data/mongodb/init
 
   tests/mariadb:                tests/mariadb
   data/mariadb/init.sql:        data/mariadb/init.sql

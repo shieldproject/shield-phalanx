@@ -186,7 +186,7 @@ tenants:
           url:                      http://$TARGET:2379
           timeout:                  "2"
           overwrite:                true
-          auth:			            "Role-Based Authentication"
+          auth:                     "Role-Based Authentication"
           username:                 root
           password:                 tests
         jobs:
