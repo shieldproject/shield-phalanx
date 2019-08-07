@@ -170,7 +170,7 @@ cat <<EOF
 EOF
 
 echo ">> configuring SHIELD"
-cat <<EOF > /var/vcap/jobs/tests/data/etcd-tls/tls/manifest.yml |
+cat <<EOF | spruce merge - | shield import -
 ---
 core:  http://<%= link('shield').instances[0].address %>:8080
 token: $SHIELD_AUTH_TOKEN
@@ -214,9 +214,6 @@ tenants:
             storage: s3
             paused:  yes
 EOF
-
-spruce merge /var/vcap/jobs/tests/data/etcd-tls/tls/manifest.yml > /var/vcap/jobs/tests/data/etcd-tls/tls/manifest-cert.yml
-shield import /var/vcap/jobs/tests/data/etcd-tls/tls/manifest-cert.yml
 
 echo "Testing etcd without tls..."
 runTests etcd-notls http://$TARGET:2379

@@ -1,6 +1,5 @@
 #!/bin/bash
 set -eu
-set -x
 exec 2>&1
 export LANG=en_US.UTF-8
 JOB=etcd-tls
