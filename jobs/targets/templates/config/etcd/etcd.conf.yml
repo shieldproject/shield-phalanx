@@ -1,0 +1,22 @@
+# This is the configuration file for the etcd server.
+
+# Human-readable name for this member.
+name: 'etcd'
+
+# Path to the data directory.
+data-dir: /var/vcap/store/targets/etcd/
+
+# List of comma separated URLs to listen on for client traffic.
+listen-client-urls: http://0.0.0.0:2379
+
+# The URLs needed to be a comma-separated list.
+advertise-client-urls: http://0.0.0.0:2379
+
+# The URLs needed to be a comma-separated list.
+initial-advertise-peer-urls: http://127.0.0.1:2380
+
+# List of comma separated URLs to listen on for peer traffic.
+listen-peer-urls: http://127.0.0.1:2380
+
+# Initial cluster configuration for bootstrapping.
+initial-cluster: etcd=http://127.0.0.1:2380

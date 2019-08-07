@@ -10,10 +10,22 @@ tar/libarchive-3.1.2.tar.gz:
   size: 4527540
   object_id: 8e80fcf7-b356-4279-bb24-496effaea3c0
   sha: 6a991777ecb0f890be931cec4aec856d1a195489
+target/cfssl_linux-amd64:
+  size: 10376657
+  sha: sha256:eb34ab2179e0b67c29fd55f52422a94fe751527b06a403a79325fed7cf0145bd
+  object_id: 5e9d9071-4fe4-49b4-58e9-c01a06f8f945
+target/cfssljson_linux-amd64:
+  size: 2277873
+  sha: sha256:1c9e628c3b86c3f2f8af56415d474c9ed4c8f9246630bd21c3418dbe5bf6401e
+  object_id: 898a261c-c5a0-4a11-5112-f3f1d6031dd4
 target/consul_0.7.3_linux_amd64.zip:
   size: 8728187
   object_id: 7d915fa0-64e6-47d5-bd82-bdc0951181ce
   sha: 193527eb29014201d9d242b4e2cefb3a4817f7e4
+target/etcd-v3.3.13-linux-amd64.tar.gz:
+  size: 10423953
+  sha: sha256:2c2e2a9867c1c61697ea0d8c0f74c7e9f1b1cf53b75dff95ca3bc03feb19ea7e
+  object_id: 1b942c00-05d9-4652-5b34-8627aa2dd7d3
 target/mariadb-10.1.21-linux-x86_64.tar.gz:
   size: 169769845
   object_id: 780c51fe-e0be-428b-aa0a-40958d232381
@@ -26,6 +38,10 @@ target/postgresql-9.6.1.tar.bz2:
   size: 19260568
   object_id: 1e4aa257-e941-4c10-ba25-0b4b46f9142a
   sha: 4209970c9aaf91ebb2a3b8a2e359419e5192b4ad
+target/spruce-linux-amd64:
+  size: 18471394
+  sha: sha256:414cb655257526134b61532878518b8a0ff30ab2acc172aaf1e4dd0d98068915
+  object_id: d86f2a82-4f1d-47f2-65cb-a94c19022489
 vault/vault_0.9.0_linux_amd64.zip:
   size: 17571361
   object_id: 3761d729-c3cd-404f-76d8-e25dbe6f537b

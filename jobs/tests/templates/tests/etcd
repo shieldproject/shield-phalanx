@@ -1,0 +1,227 @@
+#!/bin/bash
+source /var/vcap/jobs/tests/lib/functions etcd
+export PATH=$PATH:/var/vcap/packages/spruce/bin/    
+export PATH=$PATH:/var/vcap/packages/etcd/bin/
+export ETCDCTL_API=3
+
+#Adding keys and values
+addKeyVals() {
+    local url=$1
+    local val1=$2
+    local val2=$3
+    local val3=$4
+    local authOption=$5
+    echo "Putting three keys..."
+    etcdctl $authOption --endpoints=$url put key1 $val1
+    etcdctl $authOption --endpoints=$url put key2 $val2
+    etcdctl $authOption --endpoints=$url put key3 $val3
+}
+
+#Trashing data
+trashVals() {
+    local url=$1
+    local authOption=$2
+    echo "Trashing data..."
+    etcdctl $authOption --endpoints=$url put key1 valueChanged
+    etcdctl $authOption --endpoints=$url del key2
+    etcdctl $authOption --endpoints=$url put extraKey shouldNotExist
+    echo
+}
+
+#Getting values from keys
+verifyVals() {
+    local url=$1
+    local rc=0
+    local val1=$2
+    local val2=$3
+    local val3=$4
+    local authOption=$5
+    if [[ $(etcdctl $authOption --endpoints=$url get key1 --print-value-only) != "$val1" ]]; then
+        echo "!! key1 was not initialized properly"
+        rc=1
+    else
+        echo "Got correct value for key1 - $val1"
+    fi
+
+    if [[ $(etcdctl $authOption --endpoints=$url get key2 --print-value-only) != "$val2" ]]; then
+        echo "!! key2 was not initialized properly"
+        rc=1
+    else
+        echo "Got correct value for key2 - $val2"
+    fi
+
+    if [[ $(etcdctl $authOption --endpoints=$url get key3 --print-value-only) != "$val3" ]]; then
+        echo "!! key3 was not initialized properly"
+        rc=1
+    else
+        echo "Got correct value for key2 - $val3"
+    fi
+
+    if [[ $(etcdctl $authOption --endpoints=$url get extraKey --print-value-only) != "" ]]; then
+        echo "!! Overwrite did not work correctly"
+        rc=1
+    else
+        echo "Overwrite works. extraKey doesn't exist"
+    fi
+
+    echo
+    return $rc
+}
+
+#Prints all keys and values
+dumpKeys() {
+    local url=$1
+    local authOption=$2
+    echo "Printing all keys and values"
+    etcdctl $authOption --endpoints=$url get "" --prefix=true
+    echo
+}
+
+#Deletes all keys/values
+deleteVals() {
+    local url=$1
+    local authOption=$2
+    echo "Deleting keys and values"
+    etcdctl $authOption --endpoints=$url del "" --prefix=true
+    echo
+}
+
+runTests() {
+    local target=$1
+    local url=$2
+    local rc=0
+
+    local authOption
+
+    local val1=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+    local val2=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+    local val3=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+
+    echo -e ">> Setting up test data\n"
+    if [ "$target" == "etcd-notls" ]; then
+        authOption="--user root:tests"
+        deleteVals $url "$authOption"
+        etcdctl --endpoints=$url user add root:tests || true
+        etcdctl --endpoints=$url user grant-role root root || true
+        etcdctl --endpoints=$url auth enable || true
+        addKeyVals $url $val1 $val2 $val3 "$authOption"
+        dumpKeys $url "$authOption"
+    else
+        authOption="--cacert=/var/vcap/jobs/tests/data/etcd-tls/tls/cert.pem --key=/var/vcap/data/targets/etcd/key.pem --cert=/var/vcap/data/targets/etcd/cert.pem"
+        deleteVals $url "$authOption"
+        addKeyVals $url $val1 $val2 $val3 "$authOption"
+        dumpKeys $url "$authOption"
+    fi
+
+    echo ">> running backup job"
+    wait_for_task $(shield run-job ${target}-daily | jq -r '.task_uuid')
+    echo
+
+    echo -e ">> Messing up data\n"
+    if [ "$target" == "etcd-notls" ]; then
+        trashVals $url "$authOption"
+        dumpKeys $url "$authOption"
+    else
+        trashVals $url "$authOption"
+        dumpKeys $url "$authOption"
+    fi
+    echo
+
+    if ! check_encryption ${target}; then
+        rc=1
+    fi
+
+    echo ">> restoring from backups"
+    wait_for_task $(restore_latest ${target})
+    echo
+
+    echo -e ">> Verifying test data\n"
+    if [ "$target" == "etcd-notls" ]; then
+        verifyVals $url $val1 $val2 $val3 "$authOption"
+        rc=$?
+        dumpKeys $url "$authOption"
+        etcdctl --endpoints=$url --user root:tests auth disable
+        etcdctl --endpoints=$url user revoke-role root root
+        etcdctl --endpoints=$url user delete root
+        deleteVals $url "$authOption"
+    else
+        verifyVals $url $val1 $val2 $val3 "$authOption"
+        dumpKeys $url "$authOption"
+        rc=$?
+        deleteVals $url "$authOption"
+    fi
+
+    return $rc;
+}
+
+rc=0
+cat <<EOF
+
+
+###### ########  ###### ######
+#         #     #       #     #
+#         #    #        #      #
+#####     #    #        #       #
+#         #    #        #      #
+#         #     #       #     #
+######    #      ###### #####
+
+
+EOF
+
+echo ">> configuring SHIELD"
+cat <<EOF | spruce merge - | shield import -
+---
+core:  http://<%= link('shield').instances[0].address %>:8080
+token: $SHIELD_AUTH_TOKEN
+
+tenants:
+  - name: Default Tenant
+
+    systems:
+      - name:   etcd-notls
+        plugin: etcd
+        agent:  $TARGET:5444
+        config:
+          url:                      http://$TARGET:2379
+          timeout:                  "2"
+          overwrite:                true
+          auth:                     "Role-Based Authentication"
+          username:                 root
+          password:                 tests
+        jobs:
+          - name:    etcd-notls-daily
+            when:    daily 1am
+            retain:  2d
+            storage: s3
+            paused:  yes
+
+      - name:   etcd-tls
+        plugin: etcd
+        agent:  $TARGET:5444
+        config:
+          url:                      https://$TARGET:2479
+          timeout:                  "2"
+          overwrite:                true
+          auth:                     "Certificate-Based Authentication"
+          ca_cert:                  (( file "/var/vcap/jobs/tests/data/etcd-tls/tls/cert.pem" ))
+          client_cert:              (( file "/var/vcap/data/targets/etcd/cert.pem" ))
+          client_key:               (( file "/var/vcap/data/targets/etcd/key.pem" ))
+        jobs:
+          - name:    etcd-tls-daily
+            when:    daily 1am
+            retain:  2d
+            storage: s3
+            paused:  yes
+EOF
+
+echo "Testing etcd without tls..."
+runTests etcd-notls http://$TARGET:2379
+rc=$?
+echo
+
+echo "Testing etcd with tls..."
+runTests etcd-tls https://$TARGET:2479
+rc=$(($rc + $?))
+
+exit $rc

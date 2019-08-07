@@ -1,0 +1,49 @@
+# This is the configuration file for the etcd server.
+
+# Human-readable name for this member.
+name: 'etcd-tls'
+
+# Path to the data directory.
+data-dir: /var/vcap/store/targets/etcd-tls/
+
+# List of comma separated URLs to listen on for peer traffic.
+listen-peer-urls: https://127.0.0.1:2480
+
+# List of comma separated URLs to listen on for client traffic.
+listen-client-urls: https://0.0.0.0:2479
+
+# The URLs needed to be a comma-separated list.
+initial-advertise-peer-urls: https://127.0.0.1:2480
+
+# List of this member's client URLs to advertise to the public.
+# The URLs needed to be a comma-separated list.
+advertise-client-urls: https://0.0.0.0:2479
+
+# Initial cluster configuration for bootstrapping.
+initial-cluster: etcd-tls=https://127.0.0.1:2480
+
+client-transport-security:
+  # Path to the client server TLS cert file.
+  cert-file: /var/vcap/data/targets/etcd/cert.pem
+
+  # Path to the client server TLS key file.
+  key-file: /var/vcap/data/targets/etcd/key.pem
+
+  # Enable client cert authentication.
+  client-cert-auth: true
+
+  # Path to the client server TLS trusted CA cert file.
+  trusted-ca-file: /var/vcap/jobs/targets/config/etcd/tls/cert.pem
+
+peer-transport-security:
+  # Path to the peer server TLS cert file.
+  cert-file: /var/vcap/data/targets/etcd/cert.pem
+
+  # Path to the peer server TLS key file.
+  key-file: /var/vcap/data/targets/etcd/key.pem
+
+  # Enable peer client cert authentication.
+  client-cert-auth: true
+
+  # Path to the peer server TLS trusted CA cert file.
+  trusted-ca-file: /var/vcap/jobs/targets/config/etcd/tls/cert.pem

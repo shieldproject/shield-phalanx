@@ -4,6 +4,18 @@ check process consul
   stop program  "/var/vcap/jobs/targets/bin/consul stop"
   group vcap
 
+check process etcd
+  with pidfile /var/vcap/sys/run/targets/etcd.pid
+  start program "/var/vcap/jobs/targets/bin/etcd start"
+  stop program  "/var/vcap/jobs/targets/bin/etcd stop"
+  group vcap
+
+check process etcd-tls
+  with pidfile /var/vcap/sys/run/targets/etcd-tls.pid
+  start program "/var/vcap/jobs/targets/bin/etcd-tls start"
+  stop program  "/var/vcap/jobs/targets/bin/etcd-tls stop"
+  group vcap
+
 check process mariadb
   with pidfile /var/vcap/sys/run/targets/mariadb.pid
   start program "/var/vcap/jobs/targets/bin/mariadb start"
@@ -27,4 +39,3 @@ check process vault
   start program "/var/vcap/jobs/targets/bin/vault start"
   stop program  "/var/vcap/jobs/targets/bin/vault stop"
   group vcap
-
