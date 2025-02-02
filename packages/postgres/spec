@@ -3,4 +3,4 @@ name: postgres
 dependencies: []
 files:
   # https://ftp.postgresql.org/pub/source/v9.6.1/postgresql-9.6.1.tar.bz2
-  - target/postgresql-9.6.1.tar.bz2
+  - target/postgresql-9.6.8.tar.bz2
