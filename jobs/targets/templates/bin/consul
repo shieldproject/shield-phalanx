@@ -15,6 +15,11 @@ case $1 in
             openssl rsa  -noout -in ${JOB_DIR}/tls/peer/key.pem); then
       mkdir -p ${JOB_DIR}/tls/peer
       /var/vcap/packages/certifier/bin/certify ${JOB_DIR}/tls/peer/
+    # Ensure ownership and permissions are correct after certificate generation
+      echo "[$(date)] Adjusting ownership and permissions for ${JOB_DIR}/tls/peer..."
+      chown -R vcap:vcap ${JOB_DIR}/tls/peer
+      chmod 640 ${JOB_DIR}/tls/peer/key.pem
+      chmod 644 ${JOB_DIR}/tls/peer/ca.pem ${JOB_DIR}/tls/peer/cert.pem
     fi
 
     echo "[$(date)] $TARGET phalanx target exec'ing..."
