@@ -81,8 +81,18 @@ dumpKeys() {
 deleteVals() {
     local url=$1
     local authOption=$2
-    echo "Deleting keys and values"
-    etcdctl $authOption --endpoints=$url del "" --prefix=true
+    echo "Deleting keys and values on endpoint: $url with options: $authOption"
+
+    echo "Testing connection to endpoint before delete operation..."
+    etcdctl $authOption --endpoints=$url endpoint status || echo "Failed to connect to endpoint" 
+
+    echo "Attempting to delete keys with etcdctl command..."
+    etcdctl $authOption --endpoints=$url del "" --prefix=true || echo "Delete operation failed"
+
+    echo "Checking remaining keys after failed delete attempt..."
+    etcdctl $authOption --endpoints=$url get "" --prefix=true || echo "Failed to retrieve keys after delete attempt"
+
+    echo "Finished delete operation debug."
     echo
 }
 
