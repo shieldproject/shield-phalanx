@@ -8,7 +8,10 @@ JOB_DIR=/var/vcap/jobs/targets/config/$JOB
 CERTS_DIR=/var/vcap/data/targets
 TMP_DIR=/var/vcap/data/etcd/tmp/$JOB
 
-# put cfssl in our path
+# Export TARGET for SAN generation
+export TARGET="<%= link('shield').instances[0].address %>"
+
+# Add cfssl to PATH
 export PATH=$PATH:/var/vcap/packages/cfssl/bin
 
 echo "[$(date)] $BIN/$$: regenerating certificates..."
@@ -69,7 +72,7 @@ EOF
 
 echo "[$(date)] $BIN/$$: issuing the etcd server certificate for etcd"
 gencert etcd \
-        127.0.0.1,<%= spec.ip %> \
+        "127.0.0.1,<%= spec.ip %>,$TARGET" \
         etcd
 
 popd >/dev/null 2>&1
