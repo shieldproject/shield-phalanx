@@ -31,12 +31,20 @@ instance_groups:
     networks:
       - name: default
     jobs:
-      - { release: shield-phalanx, name: shield  }
-      - { release: shield-phalanx, name: agent   }
+      - name: shield
+        release: shield-phalanx
+        provides:
+          shield: { shared: true, as: shield }
+
+      - name: agent
+        release: shield-phalanx
+        consumes:
+          shield: { from: shield }
+
       - name: targets
         release: shield-phalanx
         consumes:
-          shield: {from: shield}
+          shield: { from: shield }
         properties:
           tls:
             ca:
@@ -52,7 +60,7 @@ instance_groups:
     networks:
       - name: default
     jobs:
-      - name:    tests
+      - name: tests
         release: shield-phalanx
         properties:
           aws:
