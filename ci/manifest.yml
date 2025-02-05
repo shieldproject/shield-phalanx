@@ -35,6 +35,8 @@ instance_groups:
       - { release: shield-phalanx, name: agent   }
       - name: targets
         release: shield-phalanx
+        consumes:
+          shield: {from: shield}
         properties:
           tls:
             ca:
