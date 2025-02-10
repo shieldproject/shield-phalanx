@@ -230,8 +230,17 @@ runTests etcd-notls http://$TARGET:2379
 rc=$?
 echo
 
-echo "Testing etcd with tls..."
-runTests etcd-tls https://$TARGET:2479
+echo "Testing etcd with TLS..."
+echo "Using IP address of $TARGET"
+shield_ip=$(getent hosts "$TARGET" | awk '{ print $1 }')
+
+if [ -z "$shield_ip" ]; then
+    echo "Error: Could not resolve IP address for $TARGET."
+    exit 1
+fi
+
+echo "Running tests with IP $shield_ip"
+runTests etcd-tls https://$shield_ip:2479
 rc=$(($rc + $?))
 
 exit $rc
