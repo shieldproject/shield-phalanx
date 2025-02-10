@@ -8,9 +8,6 @@ JOB_DIR=/var/vcap/jobs/tests/data/$JOB
 CERTS_DIR=/var/vcap/data/targets
 TMP_DIR=/var/vcap/data/tmp/$JOB
 
-# Export TARGET for SAN generation
-# export TARGET="<%= link('shield').instances[0].address %>"
-
 # Add cfssl to PATH
 export PATH=$PATH:/var/vcap/packages/cfssl/bin
 
