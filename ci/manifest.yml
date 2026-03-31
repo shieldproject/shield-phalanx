@@ -2,14 +2,14 @@
 meta:
   aws:
     # will be overridden in CI, so that we don't rely on the Vault...
-    access_key: (( vault "secret/aws/cfcommunity:access" ))
-    secret_key: (( vault "secret/aws/cfcommunity:secret" ))
+    access_key: (( vault "secret/aws/shieldproject:access" ))
+    secret_key: (( vault "secret/aws/shieldproject:secret" ))
 
 name: shield-phalanx-tests
 
 stemcells:
 - alias: default
-  os: ubuntu-xenial
+  os: ubuntu-jammy
   version: latest
 
 releases:
