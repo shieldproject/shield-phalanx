@@ -12,8 +12,8 @@ case $1 in
 
     test -d $PGDATA || chpst -u vcap:vcap initdb
     # FIXME: remove once we can configure the pg_dumpall bin path
-    if [[ ! -e /var/vcap/packages/postgres-9.4 ]]; then
-      ln -s /var/vcap/packages/postgres /var/vcap/packages/postgres-9.4
+    if [[ ! -e /var/vcap/packages/postgres-16 ]]; then
+      ln -s /var/vcap/packages/postgres /var/vcap/packages/postgres-16
     fi
 
     echo "[$(date)] $TARGET phalanx target exec'ing..."

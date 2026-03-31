@@ -2,7 +2,7 @@
 source /var/vcap/jobs/tests/lib/functions mongodb
 
 mongo() {
-	command mongo --quiet mongodb://$TARGET "$@"
+	command mongosh --quiet mongodb://$TARGET "$@"
 }
 
 rc=0

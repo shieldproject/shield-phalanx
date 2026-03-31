@@ -20,7 +20,6 @@ case $1 in
     echo "[$(date)] $TARGET phalanx target exec'ing..."
     exec chpst -u vcap:vcap mongod \
       --verbose \
-      --nounixsocket \
       --dbpath $DATADIR
     ;;
 
