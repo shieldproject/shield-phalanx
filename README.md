@@ -1,177 +1,122 @@
-SHIELD Phalanx
-==============
+# Shield Phalanx — Integration Test Suite
 
-Welcome to **Phalanx**, a bespoke BOSH release for testing the
-full-stack functionality of Stark & Wayne's [SHIELD][1] backup
-solution.
+SHIELD Phalanx is a comprehensive integration test suite for the [SHIELD](https://github.com/shieldproject/shield) backup and restore platform. It tests backup/restore operations against multiple target databases.
 
+## Targets Tested
 
-Methodology
------------
+- PostgreSQL (backup/restore all databases and single database)
 
-The gist of Phalanx is this: spin a bunch of data systems, run a
-handful of SHIELDs with different configurations, and make sure
-that backups and (more importantly) restore operations work!
+- MariaDB/MySQL (backup/restore all databases and single database)
 
+- MongoDB (backup/restore)
 
-See It Live!
-------------
+- Consul (backup/restore with and without TLS)
 
-<http://ci.starkandwayne.com/teams/main/pipelines/shield>
+- etcd (backup/restore with and without TLS)
 
+## Prerequisites
 
-Current Scope of Tests
-----------------------
+- Docker and Docker Compose (v2+)
 
-Phalanx currently exercises the following parts of the SHIELD
-distribution.
+## Quick Start (Docker)
 
-### The `s3` Plugin
+1. Run the tests:
+   ```bash
+   cd docker/
+   make test
+   ```
 
-For each SHIELD, a new AWS bucket is created to be used for
-storing backup archives.  This is the only currently supported
-means of using the `s3` plugin, so if the rest of the tests
-succeed, we can bet that the `s3` plugin works for both storage
-and retrieval.
+   No credentials or `.env` file required — tests use a built-in RustFS
+   container for S3-compatible storage.
 
-Note: this does not apply to the `s3`-derived `scality` plugin.
+   The `make build` step automatically clones SHIELD source from the `develop`
+   branch. To use a different branch:
+   ```bash
+   SHIELD_BRANCH=main make test
+   ```
 
-### The `postgres` Plugin
+   To test on Ubuntu Noble (24.04) instead of Jammy (22.04):
+   ```bash
+   UBUNTU_RELEASE=noble make test
+   ```
 
-Two databases are created, and filled with some data.
-Two tests are then carried out - a backup/restore of all
-databases, and a backup/restore of just one of the databases.
+   Or step by step:
+   ```bash
+   make build    # Build Docker images
+   make up       # Start all services
+   make shell    # Debug: open shell in test container
+   make down     # Tear down
+   ```
 
-### The `mysql` Plugin
+## Architecture
 
-Two databases are created, and filled with some data.
-Two tests are then carried out - a backup/restore of all
-databases, and a backup/restore of just one of the databases.
+Phalanx deploys the following services in Docker containers:
 
-### The `consul` Plugin
+| Service | Purpose | Image |
+|---------|---------|-------|
+| core | SHIELD daemon + Vault | Custom (built from source) |
+| agent | SHIELD agent + backup plugins | Custom (built from source) |
+| postgres | PostgreSQL 16 target | postgres:16-bookworm |
+| mariadb | MariaDB 11.4 target | mariadb:11.4 |
+| mongodb | MongoDB 7.0 target | mongo:7.0 |
+| consul | Consul target | hashicorp/consul:1.22 |
+| etcd | etcd target (no TLS) | quay.io/coreos/etcd:v3.6.9 |
+| etcd-tls | etcd target (with TLS) | quay.io/coreos/etcd:v3.6.9 |
+| rustfs | S3-compatible object store | rustfs/rustfs:latest |
+| cert-init | TLS certificate generator | Custom (cfssl) |
+| tests | Test runner (errand) | Custom |
 
-Two keys are created in the remote Consul Key-Value store, via the
-remote HTTP API (on port 8500).  Then, a backup is performed
-against Consul, and the keys are altered.  After the backup is
-restored, we check to make sure the keys revert to their original
-values.
+## Test Flow
 
+For each target database:
 
-Deploying it Yourself
----------------------
+1. Initialize test data
 
-If you want to do in-depth SHIELD development, you may want to
-deploy your own copy of Phalanx, on a BOSH-lite.  Here's the steps
-to get you started.
+2. Configure SHIELD target and backup job
 
-First, generate a manifest:
+3. Run backup job, verify archive created in S3
 
-```
-./templates/make_manifest
-```
+4. Verify backup archive is encrypted
 
-Then, you're going to need to provide a release tarball of the
-SHIELD you want to test.  From your SHIELD repository, run:
+5. Corrupt/destroy the data
 
-```
-make release VERSION=0.9.2-rc.3        # change version as needed
-cp artifacts/shield-server-linux-amd64.tar.gz \
-   path/to/phalanx/src/shield-rc/
-```
+6. Restore from backup
 
-Then, cut a new (development) BOSH release and deploy your
-manifest:
+7. Verify restored data matches original
 
-```
-bosh create release --force
-bosh upload release
-bosh -n deploy
-```
+## BOSH Deployment (Legacy)
 
-Once that's done, just run the `tests` errand:
+Phalanx is also a BOSH release that can be deployed via:
 
-```
-bosh run errand tests
-```
-
-If things don't turn out well, you may want to run the errand with
-the `--keep-alive` flag, and then `bosh ssh` into the `tests/0`
-instance and poke around.
-
-
-Writing new Tests
------------------
-
-Tests exist as scripts inside of the
-`/var/vcap/jobs/run-tests/tests` directory on the errand VM.  All
-you have to do to create a new test is add it to the `run-tests`
-job spec, and create the files.
-
-Here's a template script to get you started!
-
-```
-#!/bin/bash
-source /var/vcap/jobs/run-tests/lib/functions system-name
-
-rc=0
-echo "> My New Test"
-echo ">> setting up test data"
-# FIXME: set up the data
-
-echo ">> configuring SHIELD"
-shield create-target <<EOF | jq -r
-{
-  "name"     : "foo",
-  "summary"  : "Foo",
-  "plugin"   : "foo",
-  "endpoint" : "{}",
-  "agent"    : "$TARGET:5444"
-}
-EOF
-shield create-job <<EOF | jq -r
-{
-  "name"      : "foo-daily",
-  "summary"   : "Foo",
-  "paused"    : true,
-  "retention" : "$RETENTION_UUID",
-  "schedule"  : "$SCHEDULE_UUID",
-  "store"     : "$STORE_UUID",
-  "target"    : "$(shield target foo | jq -r '.uuid')"
-}
-EOF
-
-echo ">> running backup job"
-wait_for_task $(shield run $(shield job foo-daily | jq -r '.uuid') | jq -r '.task_uuid')
-
-echo ">> trashing the data"
-# FIXME: trash the data by deleting stuff, changing stuff, etc.
-
-echo ">> restoring from backups"
-wait_for_task $(shield restore $(shield archives -t $(shield target foo | jq -r '.uuid') | jq -r '.[0].uuid') | jq -r '.task_uuid')
-
-# FIXME: validate the data, post-restore,
-# FIXME: setting rc=<non-zero> on failure.
-
-exit $rc;
+```bash
+bosh create-release --force
+bosh upload-release
+bosh deploy ci/manifest.yml
+bosh run-errand phalanx-tests
 ```
 
+See `ci/manifest.yml` for the deployment manifest.
 
-Future Work
------------
+> **Note:** AWS S3 credentials are only required for BOSH-based testing
+> (the `ci/manifest.yml` deployment). Docker-based tests use RustFS.
 
-The following tests need to be conceptualized and implemented.
+## Development
 
-- A test of the `consul` plugin, against a Consul Key-Value store
-  that requires HTTP Basic Authentication.
-- A test of the `mongo` plugin, against a MongoDB instance that
-  requires authentication.
-- Tests for all of the following plugins:
-  - docker-postgres
-  - elasticsearch
-  - rabbitmq-broker
-  - redis-broker
-  - scality
-  - xtrabackup
+### Project Structure
 
+```
+docker/                    # Docker-based test infrastructure
+  docker-compose.yml       # Service definitions
+  Makefile                 # Build/test/clean targets
+  images/                  # Dockerfiles and entrypoints
+  configs/                 # Static configuration files
 
-[1]: https://github.com/starkandwayne/shield
+jobs/                      # BOSH jobs (legacy)
+packages/                  # BOSH packages (legacy)
+config/                    # BOSH release config (legacy)
+ci/                        # CI scripts and manifests
+```
+
+## License
+
+Shield is open source software.

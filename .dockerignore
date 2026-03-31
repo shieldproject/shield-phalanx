@@ -1,0 +1,13 @@
+.git
+src/shield/.git
+blobs
+.blobs
+.dev_builds
+.final_builds
+dev_releases
+releases
+tmp
+addons
+plans
+*.swp
+*~

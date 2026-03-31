@@ -1,0 +1,16 @@
+{
+  "ports": {
+    "https": 8501,
+    "grpc": -1
+  },
+  "tls": {
+    "defaults": {
+      "ca_file": "/certs/ca.pem",
+      "cert_file": "/certs/consul/cert.pem",
+      "key_file": "/certs/consul/key.pem"
+    },
+    "https": {
+      "verify_incoming": false
+    }
+  }
+}

@@ -1,0 +1,47 @@
+#!/bin/bash
+set -eu
+
+SHIELD_API="${SHIELD_API:-http://core:8080}"
+SHIELD_AGENT_NAME="${SHIELD_AGENT_NAME:-phalanx1}"
+
+# Create directories
+mkdir -p /etc/shield /shield/store/fs
+
+# Generate SSH host key if not present
+if [[ ! -f /etc/shield/ssh.key ]]; then
+  ssh-keygen -m PEM -t rsa -f /etc/shield/ssh.key -N ''
+  rm -f /etc/shield/ssh.key.pub
+fi
+
+# Wait for SHIELD core to be ready
+echo "$(date) waiting for SHIELD core at ${SHIELD_API}..."
+count=240
+while ! curl -Ls "${SHIELD_API}/v2/info" 2>/dev/null | grep -q '"api"'; do
+  sleep 1
+  count=$((count - 1))
+  if [[ $count -eq 0 ]]; then
+    echo >&2 "failed to find SHIELD core after 4 minutes; giving up."
+    exit 2
+  fi
+done
+echo "$(date) SHIELD core is ready"
+
+# Fetch the core's SSH public key
+curl -sLk "${SHIELD_API}/v1/meta/pubkey" > /etc/shield/authorized_keys
+
+# Write agent config
+cat > /etc/shield/agent.conf <<EOF
+---
+name: ${SHIELD_AGENT_NAME}
+authorized_keys_file: /etc/shield/authorized_keys
+host_key_file: /etc/shield/ssh.key
+listen_address: 0.0.0.0:5444
+plugin_paths:
+  - /shield/plugins
+registration:
+  url: ${SHIELD_API}
+  interval: 15
+EOF
+
+echo "$(date) starting shield-agent..."
+exec shield-agent --log-level debug --config /etc/shield/agent.conf

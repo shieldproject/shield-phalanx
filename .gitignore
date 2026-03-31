@@ -18,3 +18,4 @@ blobs/*
 tmp
 my*.yml
 .ci.yml
+src/shield/

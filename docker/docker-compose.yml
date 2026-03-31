@@ -1,0 +1,258 @@
+name: shield-phalanx
+
+services:
+  core:
+    build:
+      context: ..
+      dockerfile: docker/images/core/Dockerfile
+      args:
+        UBUNTU_RELEASE: ${UBUNTU_RELEASE:-noble}
+        GO_VERSION: ${GO_VERSION:-1.26.1}
+    image: phalanx/core:latest
+    hostname: core
+    networks: [phalanx]
+    ports: ['58080:8080']
+    volumes:
+      - core-data:/shield/data
+      - core-vault:/shield/vault-data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/v2/info"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: ..
+      dockerfile: docker/images/agent/Dockerfile
+      args:
+        UBUNTU_RELEASE: ${UBUNTU_RELEASE:-noble}
+        GO_VERSION: ${GO_VERSION:-1.26.1}
+    image: phalanx/agent:latest
+    hostname: agent
+    networks: [phalanx]
+    depends_on:
+      core:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+    volumes:
+      - agent-data:/shield/store
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 5444 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-bookworm
+    hostname: postgres
+    networks: [phalanx]
+    environment:
+      POSTGRES_USER: vcap
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vcap"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:11.4
+    hostname: mariadb
+    networks: [phalanx]
+    environment:
+      MARIADB_USER: vcap
+      MARIADB_PASSWORD: letmein
+      MARIADB_ROOT_PASSWORD: letmein
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "no"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./configs/mariadb/grant-privileges.sql:/docker-entrypoint-initdb.d/grant-privileges.sql:ro
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-u", "vcap", "-pletmein"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7.0
+    hostname: mongodb
+    networks: [phalanx]
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  consul:
+    image: hashicorp/consul:1.22
+    hostname: consul
+    networks: [phalanx]
+    command: agent -dev -client=0.0.0.0 -bind=0.0.0.0 -config-file=/consul/config/tls.json
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+    volumes:
+      - shared-certs:/certs:ro
+      - ./configs/consul/tls.json:/consul/config/tls.json:ro
+    healthcheck:
+      test: ["CMD", "consul", "info"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    restart: unless-stopped
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.6.9
+    hostname: etcd
+    networks: [phalanx]
+    environment:
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  cert-init:
+    build:
+      context: ..
+      dockerfile: docker/images/cfssl/Dockerfile
+      args:
+        UBUNTU_RELEASE: ${UBUNTU_RELEASE:-noble}
+    image: phalanx/cfssl:latest
+    networks: [phalanx]
+    volumes:
+      - shared-certs:/certs
+      - ./configs/ca:/ca-input:ro
+    restart: "no"
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    hostname: rustfs
+    networks: [phalanx]
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+    volumes:
+      - rustfs-data:/data
+      - rustfs-logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  etcd-tls:
+    image: quay.io/coreos/etcd:v3.6.9
+    hostname: etcd-tls
+    networks: [phalanx]
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+    environment:
+      ETCD_LISTEN_CLIENT_URLS: https://0.0.0.0:2479
+      ETCD_ADVERTISE_CLIENT_URLS: https://etcd-tls:2479
+      ETCD_LISTEN_PEER_URLS: https://0.0.0.0:2480
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: https://etcd-tls:2480
+      ETCD_INITIAL_CLUSTER: default=https://etcd-tls:2480
+      ETCD_INITIAL_CLUSTER_STATE: new
+      ETCD_CERT_FILE: /certs/etcd-tls/cert.pem
+      ETCD_KEY_FILE: /certs/etcd-tls/key.pem
+      ETCD_TRUSTED_CA_FILE: /certs/ca.pem
+      ETCD_CLIENT_CERT_AUTH: "true"
+      ETCD_PEER_CERT_FILE: /certs/etcd-tls/cert.pem
+      ETCD_PEER_KEY_FILE: /certs/etcd-tls/key.pem
+      ETCD_PEER_TRUSTED_CA_FILE: /certs/ca.pem
+    volumes:
+      - shared-certs:/certs:ro
+      - etcd-tls-data:/default.etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "--endpoints=https://localhost:2479", "--cacert=/certs/ca.pem", "--cert=/certs/etcd-tls/cert.pem", "--key=/certs/etcd-tls/key.pem", "endpoint", "health"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+    restart: unless-stopped
+
+  tests:
+    build:
+      context: ..
+      dockerfile: docker/images/tests/Dockerfile
+      args:
+        UBUNTU_RELEASE: ${UBUNTU_RELEASE:-noble}
+        GO_VERSION: ${GO_VERSION:-1.26.1}
+    image: phalanx/tests:latest
+    networks: [phalanx]
+    depends_on:
+      core:
+        condition: service_healthy
+      agent:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+      cert-init:
+        condition: service_completed_successfully
+      etcd-tls:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+    environment:
+      SHIELD_HOST: core
+      AGENT_HOST: agent
+      POSTGRES_HOST: postgres
+      MARIADB_HOST: mariadb
+      MONGODB_HOST: mongodb
+      CONSUL_HOST: consul
+      ETCD_HOST: etcd
+      ETCD_TLS_HOST: etcd-tls
+      SHIELD_CORE_MASTER: "${SHIELD_CORE_MASTER:-sekrit}"
+      S3_ENDPOINT: http://rustfs:9000
+      AWS_ACCESS_KEY_ID: rustfsadmin
+      AWS_SECRET_ACCESS_KEY: rustfsadmin
+      AWS_REGION: us-east-1
+      UBUNTU_RELEASE: ${UBUNTU_RELEASE:-noble}
+      SHIELD_BRANCH: ${SHIELD_BRANCH:-develop}
+    volumes:
+      - shared-certs:/certs:ro
+
+networks:
+  phalanx:
+    driver: bridge
+
+volumes:
+  core-data:
+  core-vault:
+  agent-data:
+  postgres-data:
+  mariadb-data:
+  mongodb-data:
+  shared-certs:
+  etcd-tls-data:
+  rustfs-data:
+  rustfs-logs:
