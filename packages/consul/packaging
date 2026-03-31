@@ -5,6 +5,6 @@ set -eu
 export HOME=/var/vcap
 mkdir -p $BOSH_INSTALL_TARGET/bin
 
-unzip target/consul_0.7.3_linux_amd64.zip
+unzip target/consul_1.19.2_linux_amd64.zip
 mv consul $BOSH_INSTALL_TARGET/bin
 chmod 755 $BOSH_INSTALL_TARGET/bin/*

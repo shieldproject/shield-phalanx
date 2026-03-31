@@ -3,7 +3,7 @@ set -eu
 
 mkdir -p $BOSH_INSTALL_TARGET/bin
 
-tar -xzf target/etcd-v3.3.13-linux-amd64.tar.gz
-cd etcd-v3.3.13-linux-amd64
+tar -xzf target/etcd-v3.5.17-linux-amd64.tar.gz
+cd etcd-v3.5.17-linux-amd64
 cp -a etcd etcdctl $BOSH_INSTALL_TARGET/bin
 chmod 755 $BOSH_INSTALL_TARGET/bin/*

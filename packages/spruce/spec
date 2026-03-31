@@ -2,5 +2,5 @@
 name: spruce
 dependencies: []
 files:
-    # https://github.com/geofffranks/spruce/releases/download/v1.22.0/spruce-linux-amd64
+    # https://github.com/geofffranks/spruce/releases/download/v1.31.1/spruce-linux-amd64
   - target/spruce-linux-amd64

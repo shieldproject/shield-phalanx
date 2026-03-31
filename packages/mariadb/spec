@@ -2,5 +2,5 @@
 name: mariadb
 dependencies: []
 files:
-  # https://downloads.mariadb.org/interstitial/mariadb-10.1.21/bintar-linux-x86_64/mariadb-10.1.21-linux-x86_64.tar.gz/from/http%3A//mirror.lstn.net/mariadb/
-  - target/mariadb-10.1.21-linux-x86_64.tar.gz
+  # https://downloads.mariadb.org/interstitial/mariadb-11.4.5/bintar-linux-systemd-x86_64/mariadb-11.4.5-linux-systemd-x86_64.tar.gz
+  - target/mariadb-11.4.5-linux-systemd-x86_64.tar.gz

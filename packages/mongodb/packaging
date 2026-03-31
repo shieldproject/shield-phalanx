@@ -6,6 +6,6 @@ set -eu
 export HOME=/var/vcap
 mkdir -p $BOSH_INSTALL_TARGET/bin
 
-tar -xzf target/mongodb-linux-x86_64-3.4.2.tgz
-cp -a mongodb-linux-x86_64-3.4.2/bin/* $BOSH_INSTALL_TARGET/bin
+tar -xzf target/mongodb-linux-x86_64-7.0.16.tgz
+cp -a mongodb-linux-x86_64-7.0.16/bin/* $BOSH_INSTALL_TARGET/bin
 chmod 755 $BOSH_INSTALL_TARGET/bin/*

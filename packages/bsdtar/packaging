@@ -8,8 +8,9 @@ CPUS=$(grep -c ^processor /proc/cpuinfo)
 # $BOSH_INSTALL_TARGET - where you copy/install files to be included in package
 export HOME=/var/vcap
 
-tar xfzv tar/libarchive-3.1.2.tar.gz
-cd libarchive-3.1.2
+# https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.gz
+tar xfzv tar/libarchive-3.7.7.tar.gz
+cd libarchive-3.7.7
 ./configure --prefix $BOSH_INSTALL_TARGET
 make -j${CPUS}
 make install

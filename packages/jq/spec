@@ -2,5 +2,5 @@
 name: jq
 dependencies: []
 files:
-  # https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux32
+  # https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
   - jq/jq

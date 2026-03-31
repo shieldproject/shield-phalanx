@@ -2,5 +2,5 @@
 name: consul
 dependencies: []
 files:
-    # https://releases.hashicorp.com/consul/0.7.3/consul_0.7.3_linux_amd64.zip
-  - target/consul_0.7.3_linux_amd64.zip
+    # https://releases.hashicorp.com/consul/1.19.2/consul_1.19.2_linux_amd64.zip
+  - target/consul_1.19.2_linux_amd64.zip
